@@ -130,21 +130,25 @@ if __name__ == "__main__":
         "--region",
         nargs="+",
         required=True,
-        help="Region",
+        help="The region can be any country, Level 1 region, or Level 2 region in the world. To specify a Level 1 or Level 2 region,\
+            use commas to separate different levels, ranking from country to Level 2. For example, to filter areas in \
+            the United States, use '--region United States'. To filter areas in Pennsylvania, use \
+            '--region United State, Pennsylvania'. To get records of Centre county, use \
+            '--region United State, Pennsylvania, Centre'."
     )
     parser.add_argument(
         "--crop",
         required=True,
         choices=list(CROPS.keys()),
-        help="Crop",
+        help="Crop name",
     )
     parser.add_argument(
         "--range",
         default="global",
         choices=["global", "conus"],
-        help="Range (global or conus)",
+        help="Filtering global look-up tables will generate weather files from GLDAS forcing data. Filtering CONUS\
+            look-up tables will generate weather files from NLDAS-2 forcing data.",
     )
     args = parser.parse_args()
 
     main(args)
-
