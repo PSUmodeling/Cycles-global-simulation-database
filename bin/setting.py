@@ -79,7 +79,7 @@ TEMP_DIR = "./temp"
 
 GADM_GPKG = f"{DATA_DIR}/gadm/gadm_410.gpkg"
 GADM_SHP = f"{DATA_DIR}/gadm/gadm_410_l3.shp"
-GADM_CSV = f"gadm_level3.csv"
+GADM_CSV = f"gadm_level3_cropland.csv"
 
 HSG_SLOPE_CSV = f"hsg_slope.csv"
 
