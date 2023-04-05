@@ -115,14 +115,14 @@ IRRIGATED_CROPLAND = [20]
 MOSAIC_CROPLAND = [30, 40]
 
 CURVE_NUMBERS = {
-    "1": [67, "A: low runoff potential (>90% sand and <10% clay)"],
+    "1": [67, "A: low runoff potential (> 90% sand and < 10% clay)"],
     "2": [78, "B: moderately low runoff potential (50-90% sand and 10-20% clay)"],
-    "3": [85, "C: moderately high runoff potential (<50% sand and 20-40% clay)"],
-    "4": [89, "D: high runoff potential (<50% sand and >40% clay)"],
-    "11": [67,"A/D: high runoff potential unless drained (>90% sand and <10% clay)"],
+    "3": [85, "C: moderately high runoff potential (< 50% sand and 20-40% clay)"],
+    "4": [89, "D: high runoff potential (< 50% sand and > 40% clay)"],
+    "11": [67,"A/D: high runoff potential unless drained (> 90% sand and < 10% clay)"],
     "12": [78,"B/D: high runoff potential unless drained (50-90% sand and 10-20% clay)"],
-    "13": [85,"C/D: high runoff potential unless drained (<50% sand and 20-40% clay)"],
-    "14": [89,"D/D: high runoff potential unless drained (<50% sand and >40% clay)"],
+    "13": [85,"C/D: high runoff potential unless drained (< 50% sand and 20-40% clay)"],
+    "14": [89,"D/D: high runoff potential unless drained (< 50% sand and > 40% clay)"],
 }
 
 SEVEN_ZIP = "7zzs"

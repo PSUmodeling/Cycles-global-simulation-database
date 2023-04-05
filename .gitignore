@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+.DS_Store
+# Data and products
+crop_lookup_*/
+soil_*/
+weather/
+temp/
+data/
+!data/GLDAS_grids.txt

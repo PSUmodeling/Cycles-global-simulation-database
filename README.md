@@ -1,6 +1,6 @@
-# Cycles global simulation database version 3.0
+# Cycles global simulation database version 3.1
 
-The Cycles global simulation database version 3.0 provides crop lookup tables, Cycles soil files, and Cycles weather files (1979 to present in CONUS, 2000 to present globally).
+The Cycles global simulation database version 3.1 provides crop lookup tables, Cycles soil files, and Cycles weather files (1979 to present in CONUS, 2000 to present globally).
 This version supports the simulations of major crops in any Level-3 (e.g., county level) administrative region in the world.
 The crops that can be simulated include **bean, cassava, lentil, maize, millet, potato, rice, sorghum, soybean, sweet potato, and wheat**.
 Each crop is classified into two categories based on irrigation types: rainfed and irrigated.
@@ -20,14 +20,14 @@ All versions prior to v2.0 were developed by Dr. Lorne Leonard.
 
 ## Crop lookup table files
 
-The `crop_lookup_3.0` directory contains crop lookup tables that include all 3rd-level (or above) administrative regions where major crops are harvested, along with the names of corresponding weather files and soil files for the regions.
+The `crop_lookup_3.1` directory contains crop lookup tables that include all 3rd-level (or above) administrative regions where major crops are harvested, along with the names of corresponding weather files and soil files for the regions.
 The lookup tables are provided in `csv` format, and are named using the convention
 `[crop name]_[irrigation type]_[range]_lookup_[file version].csv`.
-For example, `maize_irrigated_global_lookup_3.0.csv` can be interpreted as follows:
+For example, `maize_irrigated_global_lookup_3.1.csv` can be interpreted as follows:
 - [crop name] = maize
 - [irrigation type] = irrigated
 - [range] = global
-- [File version] = 3.0
+- [File version] = 3.1
 
 Each lookup table file is structured as:
 Column          | Description
@@ -49,7 +49,7 @@ Global look-up tables map regions to GLDAS grids, and CONUS look-up tables match
 
 ## Soil file archives
 
-Soil file archives provide global soil files that support the simulations of major crops, and can be found in the `soil_3.0` directory.
+Soil file archives provide global soil files that support the simulations of major crops, and can be found in the `soil_3.1` directory.
 These files are zipped and follow the naming convention `[crop name]_[irrigation type]_global_soil_[file version].7z`.
 
 The soil files contain comments indicating the hydrologic soil group to which the soil belongs.
