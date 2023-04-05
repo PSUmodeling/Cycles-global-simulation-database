@@ -79,33 +79,13 @@ def main(crop):
                 f.write("%-15s\t%.2f\n" % ("SLOPE", slope))
 
                 f.write("%-15s\t%s\n" % ("TOTAL_LAYERS", "6"))
-                f.write("%-7s\t" % "LAYER")
-                f.write("%-7s\t" % "THICK")
-                f.write("%-7s\t" % "CLAY")
-                f.write("%-7s\t" % "SAND")
-                f.write("%-7s\t" % "ORGANIC")
-                f.write("%-7s\t" % "BD")
-                f.write("%-7s\t" % "FC")
-                f.write("%-7s\t" % "PWP")
-                f.write("%-7s\t" % "SON")
-                f.write("%-7s\t" % "NO3")
-                f.write("%-7s\t" % "NH4")
-                f.write("%-7s\t" % "BYP_H")
-                f.write("%-7s\n" % "BYP_V")
+                f.write(('%-7s\t'*12 + '%s\n') % (
+                    "LAYER", "THICK", "CLAY", "SAND", "ORGANIC", "BD", "FC", "PWP", "SON", "NO3", "NH4", "BYP_H", "BYP_V"
+                ))
 
-                f.write("%-7s\t" % "#")
-                f.write("%-7s\t" % "m")
-                f.write("%-7s\t" % "%")
-                f.write("%-7s\t" % "%")
-                f.write("%-7s\t" % "%")
-                f.write("%-7s\t" % "Mg/m3")
-                f.write("%-7s\t" % "m3/m3")
-                f.write("%-7s\t" % "m3/m3")
-                f.write("%-7s\t" % "kg/ha")
-                f.write("%-7s\t" % "kg/ha")
-                f.write("%-7s\t" % "kg/ha")
-                f.write("%-7s\t" % "-")
-                f.write("%-7s\n" % "-")
+                f.write(('%-7s\t'*12 + '%s\n') % (
+                    "#", "m", "%", "%", "%", "Mg/m3", "m3/m3", "m3/m3", "kg/ha", "kg/ha", "kg/ha", "-", "-"
+                ))
 
                 for l in range(len(SG_DEPTHS)):
                     f.write("%-7d\t" % (l + 1))
