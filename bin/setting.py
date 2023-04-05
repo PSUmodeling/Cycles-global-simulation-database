@@ -1,6 +1,6 @@
 #!usr/bin/env python3
 
-VERSION = "3.0"
+VERSION = "3.0.post"
 
 CROPS = {
     "bean": "Pulses",
@@ -23,15 +23,15 @@ LU_TYPES = [
 
 SG_VARS = {
     "bdod": 100.0,
-    "cec": 10.0,
-    "cfvo": 10.0,
     "clay": 10.0,
-    "nitrogen": 100000.0,
-    "ocd": 10.0,
-    "phh2o": 10.0,
     "sand": 10.0,
-    "silt": 10.0,
     "soc": 58.0,
+    #"cec": 10.0,
+    #"cfvo": 10.0,
+    #"nitrogen": 100000.0,
+    #"ocd": 10.0,
+    #"phh2o": 10.0,
+    #"silt": 10.0,
 }
 
 SG_DEPTHS = [
