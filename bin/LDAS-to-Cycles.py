@@ -380,7 +380,8 @@ def read_var(ldas, grids, nc):
     ws = 0.622 * es / (_pres - es)
     w = _spfh / (1.0 - _spfh)
     _rh = w / ws
-    _rh = np.minimum(_rh, np.ones(_rh.shape))
+    _rh = np.minimum(_rh, np.full(_rh.shape, 1.0))      # Maximum RH 1.0
+    _rh = np.maximum(_rh, np.full(_rh.shape, 0.01))     # Minimum RH 0.01
 
     _wind = np.sqrt(_uwind ** 2 + _vwind **2) if ldas == "NLDAS" else _uwind
 
