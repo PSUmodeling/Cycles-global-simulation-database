@@ -192,6 +192,9 @@ def main(crop):
     print("Read gadm file")
     gadm_df = pd.read_csv(GADM_CSV)
 
+    ## Filter out regions without cropland
+    gadm_df = gadm_df[gadm_df['Cropland'] == True]
+
     # Read filtered crop GeoTIff grids
     filtered = pd.read_csv(FILTERED, dtype={"GID": "str"})
 

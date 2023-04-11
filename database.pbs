@@ -19,7 +19,7 @@ python3 ./bin/gadm_level3.py
 
 # Project crop fraction geotiff pixels to administrative regions. The projections are written to a csv file. The script
 # will also generate a csv containing the information of all administrative regions with cropland
-python3 ./bin/filter_grids_by_gadm.py
+python3 ./bin/project_grids_to_gadm.py
 
 # Generate crop look-up tables
 python3 ./bin/generate_global_lookup.py --crop bean

@@ -92,10 +92,9 @@ def main():
     ]]
     df_out.to_csv(FILTERED, index=False)
 
-    print("Filter out regions without cropland")
+    print("Check if regions have cropland")
     rds = rioxarray.open_rasterio(GEOTIFFS["lc"], masked=True)
-    t["cropland"] = t.apply(lambda x: cropland_exists(rds, x["geometry"]), axis=1)
-    t = t[t["cropland"] == True]
+    t["Cropland"] = t.apply(lambda x: cropland_exists(rds, x["geometry"]), axis=1)
 
     print("Calculate centroids")
     t["centroid"] = t.centroid
@@ -114,6 +113,7 @@ def main():
         "Lat",
         "Lon",
         "AreaKm2",
+        "Cropland",
     ]]
     df_out.to_csv(
         GADM_CSV,
