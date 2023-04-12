@@ -43,15 +43,15 @@ def read_gldas_grids():
     Use mask/elevation netCDF file to read in the grids, and create a land mask to filter out open water grids.
     '''
 
-    # Read in grids and elevations
+    # Read in grids and land/sea mask. Grid boxes made up of more than 50% water are assigned a "water" value of 0 in
+    # the GLDAS land/sea mask, while all other grid boxes receive a "land" value of 1.
     with Dataset(GLDAS_MASK) as nc:
-        mask_array = nc["GLDAS_elevation"][0]
-        mask_array = np.ma.filled(mask_array.astype(float), np.nan)
+        mask_array = nc["GLDAS_mask"][0]
         lats, lons = np.meshgrid(nc["lat"][:], nc["lon"][:], indexing="ij")
 
-    # Mask sea grid lat/lon as nan
-    lats[np.isnan(mask_array)] = np.nan
-    lons[np.isnan(mask_array)] = np.nan
+    # Mask sea grid lats/lons as nan
+    lats[mask_array == 0] = np.nan
+    lons[mask_array == 0] = np.nan
 
     return [lats, lons], mask_array
 
@@ -76,7 +76,7 @@ def find_grid(lat, lon, coord, mask_array):
 
     closest = (GLDAS_J(lat), GLDAS_I(lon))
 
-    if np.isnan(mask_array[closest]):   # If closest grid is a sea/non-CONUS grid
+    if mask_array[closest] == 0:    # If closest grid is water, find closest land grid
         closest = closest_grid(lat, lon, coord)
         print(f"Nearest GLDAS land grid to {lat:.3f}x{lon:.3f} is {coord[0][closest]}x{coord[1][closest]}")
 

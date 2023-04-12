@@ -107,7 +107,7 @@ LOOKUP_CONUS_CSV = lambda crop, lu: f"{LOOKUP_DIR}/{crop}_{lu.lower()}_conus_loo
 
 SOIL_ARCHIVE = lambda crop, lu: f"{SOIL_DIR}/{crop}_{lu.lower()}_global_soil_{VERSION}.7z"
 
-GLDAS_MASK = f"{DATA_DIR}/GLDASp4_elevation_025d.nc4"
+GLDAS_MASK = f"{DATA_DIR}/GLDASp5_landmask_025d.nc4"
 NLDAS_MASK = f"{DATA_DIR}/NLDAS_masks-veg-soil.nc4"
 
 RAINFED_CROPLAND = [10, 11, 12]
