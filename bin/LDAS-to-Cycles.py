@@ -8,8 +8,8 @@ import subprocess
 from datetime import timedelta, datetime
 from netCDF4 import Dataset
 from setting import DATA_DIR
+from setting import GLDAS_GRIDS
 
-LOCATION_FILE = "./data/GLDAS_grids.txt"
 WEATHER_DIR = "./weather"
 COOKIE_FILE = "./.urs_cookies"
 
@@ -238,7 +238,7 @@ def read_gldas_grids():
 
     grids = []
 
-    with open(LOCATION_FILE) as f:
+    with open(GLDAS_GRIDS) as f:
         for line in f:
             line = line.strip()
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -l nodes=1:ppn=12:basic
+#PBS -l nodes=1:ppn=4
 #PBS -l pmem=10500mb
 #PBS -l walltime=48:00:00
 #PBS -j oe
@@ -114,6 +114,10 @@ python3 ./bin/LDAS-to-Cycles.py --ldas NLDAS --start 2022-01-01 --end 2022-12-31
 7zzs a NLDAS_CONUS_1979-2022.7z ./weather/NLDAS*.weather
 
 # Generate weather files from GLDAS
+
+## Get GLDAS grids
+pythone ./bin/get_gldas_grids.py
+
 python3 ./bin/LDAS-to-Cycles.py --ldas GLDAS --start 2000-01-01 --end 2000-12-31
 python3 ./bin/LDAS-to-Cycles.py --ldas GLDAS --start 2001-01-01 --end 2001-12-31
 python3 ./bin/LDAS-to-Cycles.py --ldas GLDAS --start 2002-01-01 --end 2002-12-31

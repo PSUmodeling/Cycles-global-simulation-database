@@ -127,3 +127,6 @@ CURVE_NUMBERS = {
 
 SEVEN_ZIP = "7zzs"
 COMPRESS = "./bin/compress.sh"
+
+GLDAS_GRIDS = f'{DATA_DIR}/GLDAS_grids.txt'
+
