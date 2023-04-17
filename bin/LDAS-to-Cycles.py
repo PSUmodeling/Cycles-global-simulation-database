@@ -22,12 +22,12 @@ START_HOURS = {
     "NLDAS": 13,
 }
 ELEV_URLS = {
-    "GLDAS": "https://ldas.gsfc.nasa.gov/sites/default/files/ldas/gldas/ELEV/GLDASp4_elevation_025d.nc4",
+    "GLDAS": "https://ldas.gsfc.nasa.gov/sites/default/files/ldas/gldas/ELEV/GLDASp5_elevation_025d.nc4",
     "NLDAS": "https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_elevation.nc4"
 }
 ELEV_FILES = {
-    "GLDAS": "GLDASp4_elevation_025d.nc4",
-    "NLDAS": "NLDAS_elevation.nc4",
+    "GLDAS": os.path.basename(ELEV_URLS['GLDAS']),
+    "NLDAS": os.path.basename(ELEV_URLS['NLDAS']),
 }
 MASK_URL = "https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_masks-veg-soil.nc4"
 MASK_FILE = "NLDAS_masks-veg-soil.nc4"
