@@ -419,7 +419,7 @@ def main(params):
     fns, strs = get_file_names(ldas, coord, grids)
 
     print(f"Create {ldas} forcing data from {datetime.strftime(start_date, '%Y-%m-%d')} to "
-        f"{datetime.strftime(end_date + timedelta(days=-1), '%Y-%m-%d')}:")
+        f"{datetime.strftime(end_date, '%Y-%m-%d')}:")
 
     # Write headers if needed
     if start_date == START_DATES[ldas]:
