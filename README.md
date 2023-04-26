@@ -6,6 +6,14 @@ The crops that can be simulated include **bean, cassava, lentil, maize, millet, 
 Each crop is classified into two categories based on irrigation types: rainfed and irrigated.
 All versions prior to v2.0 were developed by Dr. Lorne Leonard.
 
+
+## What's new
+
+- Missing values in SoilGrids data were filled with values from adjacent grids.
+- A lower bound of 1% was added for minimum relative humidity to address negative specific humidity in GLDAS forcing.
+- Fixed a bug that some GLDAS water grids were not correctly filtered out.
+- Used the new version of GLDAS elevation file.
+
 ## Data Sources
 
 - [GAEZ+_2015 Crop Harvest Area](https://doi.org/10.7910/DVN/KAGRFI)
@@ -104,7 +112,7 @@ Close-seeded or broadcast legumes or rotation meadow | C & T      | Good        
 
 ## Weather file archives
 
-Weather file archives are stored in the `weather` directory.
+Weather file archives are stored in the `weather_3.1` directory.
 The `NLDAS_CONUS_1979-2022.7z` archive contains 52,476 Cycles weather files for the CONUS region, generated from the primary forcing data for Phase 2 of the North American Land Data Assimilation System (NLDAS-2).
-The `GLDAS_2000-2022.7z` archive contains all 47221 Cycles weather files that appear in the global look-up tables, generated from the primary forcing data for the Global Land Data Assimilation System (GLDAS).
+The `GLDAS_2000-2022.7z` archive contains all 47,216 Cycles weather files that appear in the global look-up tables, generated from the primary forcing data for the Global Land Data Assimilation System (GLDAS).
 The weather files follow the naming convention `[LDAS]_[lat][N or S]_[lon][E or W].weather`, where `[LDAS]` can be either GLDAS or NLDAS, and `[lat]` and `[lon]` refer to the latitude and longitude of the corresponding grids.
