@@ -5,6 +5,8 @@ import numpy as np
 import os
 import pandas as pd
 import subprocess
+import sys
+sys.path.insert(1, './bin/')
 from setting import CROPS
 from setting import LU_TYPES
 from setting import LOOKUP_DIR
