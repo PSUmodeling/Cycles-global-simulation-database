@@ -129,6 +129,9 @@ dmypy.json
 .pyre/
 
 .DS_Store
+.urs_cookies
+*.out
+
 # Data and products
 crop_lookup_*/
 soil_*/
@@ -136,3 +139,4 @@ weather/
 temp/
 data/
 !data/GLDAS_grids.txt
+
