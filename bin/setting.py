@@ -73,8 +73,8 @@ CROP_VARS = [
 ]
 
 DATA_DIR = "./data"
-LOOKUP_DIR = f"./crop_lookup_{VERSION}"
-SOIL_DIR = f"./soil_{VERSION}"
+LOOKUP_DIR = f"./crop_lookup"
+SOIL_DIR = f"./soil"
 TEMP_DIR = "./temp"
 
 GADM_GPKG = f"{DATA_DIR}/gadm/gadm_410.gpkg"
@@ -129,4 +129,3 @@ SEVEN_ZIP = "7zzs"
 COMPRESS = "./bin/compress.sh"
 
 GLDAS_GRIDS = f'{DATA_DIR}/GLDAS_grids.txt'
-

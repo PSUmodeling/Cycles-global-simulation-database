@@ -28,7 +28,7 @@ All versions prior to v2.0 were developed by Dr. Lorne Leonard.
 
 ## Crop lookup table files
 
-The `crop_lookup_3.1` directory contains crop lookup tables that include all 3rd-level (or above) administrative regions where major crops are harvested, along with the names of corresponding weather files and soil files for the regions.
+The `crop_lookup` directory contains crop lookup tables that include all 3rd-level (or above) administrative regions where major crops are harvested, along with the names of corresponding weather files and soil files for the regions.
 The lookup tables are provided in `csv` format, and are named using the convention
 `[crop name]_[irrigation type]_[range]_lookup_[file version].csv`.
 For example, `maize_irrigated_global_lookup_3.1.csv` can be interpreted as follows:
@@ -57,7 +57,7 @@ Global look-up tables map regions to GLDAS grids, and CONUS look-up tables match
 
 ## Soil file archives
 
-Soil file archives provide global soil files that support the simulations of major crops, and can be found in the `soil_3.1` directory.
+Soil file archives provide global soil files that support the simulations of major crops, and can be found in the `soil` directory.
 These files are zipped and follow the naming convention `[crop name]_[irrigation type]_global_soil_[file version].7z`.
 
 The soil files contain comments indicating the hydrologic soil group to which the soil belongs.
