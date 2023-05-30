@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "3.1"
+VERSION = "3.2"
 
 CROPS = {
     "bean": "Pulses",
