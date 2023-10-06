@@ -137,6 +137,7 @@ crop_lookup_*/
 soil_*/
 weather/
 temp/
-data/
+/data/*
 !data/GLDAS_grids.txt
-
+!data/gridMET_grids.txt
+!data/gridMET_elevation.nc

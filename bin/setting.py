@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "3.2"
+VERSION = "3.3"
 
 CROPS = {
     "bean": "Pulses",
@@ -102,8 +102,8 @@ GEOTIFFS = {
 
 FILTERED = f"gadm_filtered_{VERSION}.csv"
 
-LOOKUP_CSV = lambda crop, lu: f"{LOOKUP_DIR}/{crop}_{lu.lower()}_global_lookup_{VERSION}.csv"
-LOOKUP_CONUS_CSV = lambda crop, lu: f"{LOOKUP_DIR}/{crop}_{lu.lower()}_conus_lookup_{VERSION}.csv"
+LOOKUP_CSV = lambda crop, lu: f"{LOOKUP_DIR}/global/{crop}_{lu.lower()}_global_gldas_lookup_{VERSION}.csv"
+LOOKUP_CONUS_CSV = lambda crop, lu, ldas: f"{LOOKUP_DIR}/conus/{crop}_{lu.lower()}_conus_{ldas.lower()}_lookup_{VERSION}.csv"
 
 SOIL_ARCHIVE = lambda crop, lu: f"{SOIL_DIR}/{crop}_{lu.lower()}_global_soil_{VERSION}.7z"
 
@@ -128,4 +128,27 @@ CURVE_NUMBERS = {
 SEVEN_ZIP = "7zzs"
 COMPRESS = "./bin/compress.sh"
 
-GLDAS_GRIDS = f'{DATA_DIR}/GLDAS_grids.txt'
+GRIDS = lambda x: f'{DATA_DIR}/{x}_grids.txt'
+
+LA1 = {
+    'gridMET': 49.4,
+    'NLDAS': 25.0625,
+    'GLDAS': -59.875,
+}
+LO1 = {
+    'gridMET': -124.76667,
+    'NLDAS': -124.9375,
+    'GLDAS': -179.875,
+}
+DI = {
+    'gridMET': 1.0 / 24.0,
+    'NLDAS': 0.125,
+    'GLDAS': 0.25,
+}
+DJ = {
+    'gridMET': -1.0 / 24.0,
+    'NLDAS': 0.125,
+    'GLDAS': 0.25,
+}
+IND_J = lambda ldas, lat: int(round((lat - LA1[ldas]) / DJ[ldas]))
+IND_I = lambda ldas, lon: int(round((lon - LO1[ldas]) / DI[ldas]))

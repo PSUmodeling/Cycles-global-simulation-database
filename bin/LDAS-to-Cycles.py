@@ -8,7 +8,8 @@ import subprocess
 from datetime import timedelta, datetime
 from netCDF4 import Dataset
 from setting import DATA_DIR
-from setting import GLDAS_GRIDS
+from setting import GRIDS
+from setting import IND_I, IND_J
 
 WEATHER_DIR = './weather'
 COOKIE_FILE = './.urs_cookies'
@@ -16,6 +17,7 @@ COOKIE_FILE = './.urs_cookies'
 START_DATES = {
     'GLDAS': datetime.strptime('2000-01-01', '%Y-%m-%d'),
     'NLDAS': datetime.strptime('1979-01-01', '%Y-%m-%d'),
+    'gridMET': datetime.strptime('1979-01-01', '%Y-%m-%d'),
 }
 START_HOURS = {
     'GLDAS': 3,
@@ -23,21 +25,29 @@ START_HOURS = {
 }
 ELEV_URLS = {
     'GLDAS': 'https://ldas.gsfc.nasa.gov/sites/default/files/ldas/gldas/ELEV/GLDASp5_elevation_025d.nc4',
-    'NLDAS': 'https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_elevation.nc4'
+    'NLDAS': 'https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_elevation.nc4',
+    'gridMET': 'https://climate.northwestknowledge.net/METDATA/data/metdata_elevationdata.nc'
 }
 ELEV_FILES = {
-    'GLDAS': os.path.basename(ELEV_URLS['GLDAS']),
-    'NLDAS': os.path.basename(ELEV_URLS['NLDAS']),
+    'GLDAS': 'GLDASp5_elevation_025d.nc4',
+    'NLDAS': 'NLDAS_elevation.nc4',
+    'gridMET': 'gridMET_elevation.nc',
 }
-MASK_URL = 'https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_masks-veg-soil.nc4'
-MASK_FILE = 'NLDAS_masks-veg-soil.nc4'
+MASK_URLS = {
+    'NLDAS': 'https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_masks-veg-soil.nc4',
+}
+MASK_FILES = {
+    'NLDAS': 'NLDAS_masks-veg-soil.nc4',
+}
 URLS = {
     'GLDAS': 'https://hydro1.gesdisc.eosdis.nasa.gov/data/GLDAS/GLDAS_NOAH025_3H.2.1',
     'NLDAS': 'https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.2.0',
+    'gridMET': 'http://www.northwestknowledge.net/metdata/data/',
 }
 EXTENSIONS = {
     'GLDAS': 'nc4',
     'NLDAS': 'nc',
+    'gridMET': 'nc',
 }
 NC_PREFIXES = {
     'GLDAS': 'GLDAS_NOAH025_3H.A',
@@ -55,6 +65,7 @@ NC_FIELDS = {
     'ELEV': {
         'GLDAS': 'GLDAS_elevation',
         'NLDAS': 'NLDAS_elev',
+        'gridMET': 'elevation',
     },
     'MASK': {
         'GLDAS': '',
@@ -92,6 +103,16 @@ NC_FIELDS = {
         'GLDAS': 'Psurf_f_inst',
         'NLDAS': 'PSurf',
     },
+}
+
+GRIDMET_VARS = {
+    'pr': 'precipitation_amount',
+    'tmmx': 'air_temperature',
+    'tmmn': 'air_temperature',
+    'srad': 'surface_downwelling_shortwave_flux_in_air',
+    'rmax': 'relative_humidity',
+    'rmin': 'relative_humidity',
+    'vs': 'wind_speed',
 }
 
 
@@ -138,17 +159,41 @@ def ldas_download(ldas, d):
         )
 
 
-def read_nldas_grids():
-    '''Read in NLDAS grid information from elevation files
+def gridmet_download(ldas, year):
+    """Download gridMET forcing files
+    """
+    os.makedirs(f'{DATA_DIR}/{ldas}', exist_ok=True)
 
-    Use elevation/grid netCDF files to read in the grids and elevations. Then create a land mask to filter out open
+    print(f'    Downloading {year} data...')
+
+    for var in GRIDMET_VARS:
+        cmd = [
+            'wget',
+            '-nc',
+            '-c',
+            '-nd',
+            f'{URLS[ldas]}/{var}_{year}.nc',
+            '-P',
+            f'{DATA_DIR}/{ldas}',
+        ]
+        subprocess.run(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+
+def read_all_grids(ldas):
+    """Read in reanalysis grid information from mask and elevation files
+
+    Use mask and elevation netCDF files to read in land grids and elevations.
     water grids.
-    '''
+    """
     # Download mask file
     cmd = [
         'wget',
         '-N',       # Avoid downloading new copies if file already exists
-        MASK_URL,
+        MASK_URLS[ldas],
         '-P',
         DATA_DIR,
     ]
@@ -159,31 +204,29 @@ def read_nldas_grids():
     )
 
     # Download elevation file
-    cmd = [
-        'wget',
-        '-N',       # Avoid downloading new copies if file already exists
-        ELEV_URLS['NLDAS'],
-        '-P',
-        DATA_DIR,
-    ]
-    subprocess.run(
-        cmd,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    if ldas != 'gridMET':
+        cmd = [
+            'wget',
+            '-N',       # Avoid downloading new copies if file already exists
+            ELEV_URLS[ldas],
+            '-P',
+            DATA_DIR,
+        ]
+        subprocess.run(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
     # Read in grids and elevations
-    with Dataset(f'{DATA_DIR}/{ELEV_FILES["NLDAS"]}') as nc:
-        elev_array = nc[NC_FIELDS['ELEV']['NLDAS']][0]
-        #elev_array = np.ma.filled(elev_array.astype(float), np.nan)
-
+    with Dataset(f'{DATA_DIR}/{ELEV_FILES[ldas]}') as nc:
+        elev_array = nc[NC_FIELDS['ELEV'][ldas]][:, :]
         elevs = elev_array.flatten()
 
-    with Dataset(f'{DATA_DIR}/{MASK_FILE}') as nc:
-        mask_array = nc[NC_FIELDS['MASK']['NLDAS']][0]
+    with Dataset(f'{DATA_DIR}/{MASK_FILES[ldas]}') as nc:
+        mask_array = nc[NC_FIELDS['MASK'][ldas]][0]
 
         lats, lons = np.meshgrid(nc['lat'][:], nc['lon'][:], indexing='ij')
-
         lats = lats.flatten()
         lons = lons.flatten()
         masks = mask_array.flatten()
@@ -191,53 +234,42 @@ def read_nldas_grids():
     grids = []
 
     for k in range(mask_array.size):
-        #if not math.isnan(elev_array[np.unravel_index(k, elev_array.shape)]):
         if masks[k] == 1: grids.append(k)
 
     return [lats, lons], grids, elevs
 
 
-def closest_grid(lat, lon, coord):
-    '''Find closest grid to an input site
-    '''
-    lats = coord[0]
-    lons = coord[1]
-    dist = np.sqrt((lons - lon)**2 + (lats - lat)**2)
-    closest = np.unravel_index(np.argmin(dist, axis=None), dist.shape)[0]
-
-    return closest
-
-
-def read_gldas_grids():
-    '''Read in GLDAS grids from a location file
+def read_grids_from_file(ldas):
+    '''Read in reanalysis grids from a location file
     '''
     # Download elevation file
-    cmd = [
-        'wget',
-        '-N',       # Avoid downloading new copies if file already exists
-        ELEV_URLS['GLDAS'],
-        '-P',
-        DATA_DIR,
-    ]
-    subprocess.run(
-        cmd,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    if ldas != 'gridMET':
+        cmd = [
+            'wget',
+            '-N',       # Avoid downloading new copies if file already exists
+            ELEV_URLS[ldas],
+            '-P',
+            DATA_DIR,
+        ]
+        subprocess.run(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
 
     # Read in grids and elevations
-    with Dataset(f'{DATA_DIR}/{ELEV_FILES["GLDAS"]}') as nc:
-        elev_array = nc[NC_FIELDS['ELEV']['GLDAS']][0]
+    with Dataset(f'{DATA_DIR}/{ELEV_FILES[ldas]}') as nc:
+        elev_array = nc[NC_FIELDS['ELEV'][ldas]][:, :] if ldas == 'gridMET' else nc[NC_FIELDS['ELEV'][ldas]][0][:, :]
         elevs = elev_array.flatten()
 
         lats, lons = np.meshgrid(nc['lat'][:], nc['lon'][:], indexing='ij')
-
         lats = lats.flatten()
         lons = lons.flatten()
 
     grids = []
 
-    with open(GLDAS_GRIDS) as f:
+    count = 0
+    with open(GRIDS(ldas)) as f:
         for line in f:
             line = line.strip()
 
@@ -250,8 +282,7 @@ def read_gldas_grids():
             lon = float(strs[1])
 
             # Find the closest LDAS grid
-            grid_ind = closest_grid(lat, lon, [lats, lons])
-
+            grid_ind = np.ravel_multi_index((IND_J(ldas, lat), IND_I(ldas, lon)), elev_array.shape)
             grids.append(grid_ind)
 
     return [lats, lons], grids, elevs
@@ -283,9 +314,6 @@ def init_weather_files(coord, strs, grids, elevs):
     '''
     print('Writing headers')
 
-    # Create weather directory for meteorological files
-    os.makedirs(WEATHER_DIR, exist_ok=True)
-
     lats = coord[0]
 
     # Generate meteorological files
@@ -297,7 +325,7 @@ def init_weather_files(coord, strs, grids, elevs):
         # Open meteorological file and write header lines
         strs[kgrid].append('%-23s\t%.2f\n' % ('LATITUDE', grid_lat))
         strs[kgrid].append('%-23s\t%.2f\n' % ('ALTITUDE', elevation))
-        strs[kgrid].append('%-23s\t%.1f\n' % ('SCREENING_HEIGHT', 2.0))
+        strs[kgrid].append('%-23s\t%.1f\n' % ('SCREENING_HEIGHT', 10.0))
         strs[kgrid].append('%-7s\t%-7s\t%-7s\t%-7s\t%-7s\t%-7s\t%-7s\t%-7s\t%s\n' %
             ('YEAR', 'DOY', 'PP', 'TX', 'TN', 'SOLAR', 'RHX', 'RHN', 'WIND'))
         strs[kgrid].append('%-7s\t%-7s\t%-7s\t%-7s\t%-7s\t%-7s\t%-7s\t%-7s\t%s\n' %
@@ -357,6 +385,43 @@ def process_day(ldas, t0, grids, strs):
         )
 
 
+def process_year(ldas, year, grids, strs):
+    '''Process one day of LDAS data and write them to meteorological files
+    '''
+    print(f'    {year}')
+
+    ncs = {}
+    for v in GRIDMET_VARS:
+        fn = f'{DATA_DIR}/{ldas}/{v}_{year}.nc'
+        ncs[v] = Dataset(fn, 'r')
+
+    # Get number of days in current file
+    ndays = int(len(ncs['pr']['day']))
+
+    values = {}
+    for d in range(ndays):
+        print(datetime.strptime(str(year) + '-' + str(d + 1), '%Y-%j').strftime('    %Y-%m-%d'))
+
+        for v in GRIDMET_VARS:
+            values[v] = ncs[v][GRIDMET_VARS[v]][d].flatten()[grids]
+
+        for kgrid in range(len(grids)):
+            strs[kgrid].append(f'%-7d\t%-4.3d\t{"%-#.5g" if values["pr"][kgrid] >= 1.0 else "%-.4f"}\t%-7.2f\t%-7.2f\t%-7.3f\t%-7.2f\t%-7.2f\t%-8.2f\n' % (
+                year,
+                d + 1,
+                values['pr'][kgrid],
+                values['tmmx'][kgrid] - 273.15,
+                values['tmmn'][kgrid] - 273.15,
+                values['srad'][kgrid] * 86400.0 / 1.0E6,
+                values['rmax'][kgrid],
+                values['rmin'][kgrid],
+                values['vs'][kgrid],
+            ))
+
+    for v in GRIDMET_VARS:
+        ncs[v].close()
+
+
 def read_var(ldas, grids, nc):
     '''Read meteorological variables of an array of desired grids from netCDF
 
@@ -406,12 +471,17 @@ def main(params):
     end_date = params['end']
     ldas = params['ldas']
 
+    if start_date < START_DATES[ldas]: exit('Start date error.')
+
+    # Create weather directory for meteorological files
+    os.makedirs(WEATHER_DIR, exist_ok=True)
+
     # Download elevation file to get grid info
     print('Read grids')
     if ldas == 'NLDAS':
-        coord, grids, elev_array = read_nldas_grids()
+        coord, grids, elev_array = read_all_grids(ldas)
     else:
-        coord, grids, elev_array = read_gldas_grids()
+        coord, grids, elev_array = read_grids_from_file(ldas)
 
     print('Initialize files')
     fns, strs = get_file_names(ldas, coord, grids)
@@ -424,24 +494,30 @@ def main(params):
         init_weather_files(coord, strs, grids, elev_array)
 
     # Download and process data day-by-day
-    ## Create a cookie file. This file will be used to persist sessions across calls to Wget or Curl
-    cmd = [
-        'touch',
-        COOKIE_FILE,
-    ]
-    subprocess.run(cmd)
+    if ldas == 'GLDAS' or ldas == 'NLDAS':
+        ## Create a cookie file. This file will be used to persist sessions across calls to Wget or Curl
+        cmd = [
+            'touch',
+            COOKIE_FILE,
+        ]
+        subprocess.run(cmd)
 
-    cday = start_date
-    while cday <= end_date:
-        ## Download data
-        ldas_download(ldas, cday)
+        cday = start_date
+        while cday <= end_date:
+            ## Download data
+            ldas_download(ldas, cday)
 
-        ## Process each day's data
-        process_day(ldas, cday, grids, strs)
+            ## Process each day's data
+            process_day(ldas, cday, grids, strs)
 
-        cday += timedelta(days=1)
+            cday += timedelta(days=1)
+    elif ldas == 'gridMET':
+        for year in range(start_date.year, end_date.year + 1):
+            gridmet_download(ldas, year)
+            process_year(ldas, year, grids, strs)
 
     # Write to weather files
+    print('Write to files')
     write_to_files('w' if start_date == START_DATES[ldas] else 'a', fns, strs)
 
 
@@ -463,7 +539,8 @@ def _main():
         '--ldas',
         default='NLDAS',
         type=str,
-        help='LDAS',
+        choices=['GLDAS', 'NLDAS', 'gridMET'],
+        help='Reanalysis data',
     )
     args = parser.parse_args()
 

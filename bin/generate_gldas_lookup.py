@@ -27,14 +27,6 @@ CROP_I = lambda x: int(round((x + CROP_LO1) / CROP_DI))
 CROP_J = lambda y: int(round((CROP_LA1 - y) / CROP_DJ))
 CROP_IDX = lambda x, y: CROP_J(y) * CROP_NI + CROP_I(x)
 
-GLDAS_LA1 = -59.875
-GLDAS_LO1 = -179.875
-GLDAS_DI = 0.25
-GLDAS_DJ = 0.25
-
-GLDAS_J = lambda lat: int(round((lat - GLDAS_LA1) / GLDAS_DJ))
-GLDAS_I = lambda lon: int(round((lon - GLDAS_LO1) / GLDAS_DI))
-
 _country = ""
 
 def read_gldas_grids():
@@ -74,7 +66,7 @@ def find_grid(lat, lon, coord, mask_array):
     two grids, it will determine if the specified grid is a land point.
     '''
 
-    closest = (GLDAS_J(lat), GLDAS_I(lon))
+    closest = (IND_J('GLDAS', lat), IND_I('GLDAS', lon))
 
     if mask_array[closest] == 0:    # If closest grid is water, find closest land grid
         closest = closest_grid(lat, lon, coord)
