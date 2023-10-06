@@ -11,31 +11,19 @@ from setting import LOOKUP_DIR
 from setting import LOOKUP_CSV
 from setting import LOOKUP_CONUS_CSV
 from setting import IND_I, IND_J
-from setting import DATA_DIR
-from setting import NLDAS_MASK
+from setting import MASK_FILES
+from setting import NC_FIELDS
 
 
 def read_grids(ldas):
     """Read in meteorological reanalysis grid information
 
-    For NLDAS, use mask netCDF file to read in the grids, and create a land mask to filter out open water grids.
-    GridMET database does not provide a land/sea mask. Therefore, we use their data file to create a mask to filter out
+    Use mask netCDF file to read in the grids, and create a land mask to filter out open water grids.
     open water grids.
     """
-    masks = {
-        'gridMET': {
-            'file': f'{DATA_DIR}/gridMET/pr_1979.nc',
-            'field': 'precipitation_amount',
-        },
-        'NLDAS': {
-            'file': NLDAS_MASK,
-            'field': 'CONUS_mask',
-        },
-    }
-
     # Read in grids and elevations
-    with Dataset(masks[ldas]['file']) as nc:
-        mask_array = nc[masks[ldas]['field']][0]
+    with Dataset(MASK_FILES[ldas]) as nc:
+        mask_array = nc[NC_FIELDS['MASK'][ldas]][0] if ldas == 'NLDAS' else nc[NC_FIELDS['MASK'][ldas]][:, :]
         mask_array = np.ma.filled(mask_array.astype(float), np.nan)
         lats, lons = np.meshgrid(nc['lat'][:], nc['lon'][:], indexing='ij')
 

@@ -10,6 +10,9 @@ from netCDF4 import Dataset
 from setting import DATA_DIR
 from setting import GRIDS
 from setting import IND_I, IND_J
+from setting import NC_FIELDS
+from setting import MASK_URLS
+from setting import MASK_FILES
 
 WEATHER_DIR = './weather'
 COOKIE_FILE = './.urs_cookies'
@@ -26,18 +29,11 @@ START_HOURS = {
 ELEV_URLS = {
     'GLDAS': 'https://ldas.gsfc.nasa.gov/sites/default/files/ldas/gldas/ELEV/GLDASp5_elevation_025d.nc4',
     'NLDAS': 'https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_elevation.nc4',
-    'gridMET': 'https://climate.northwestknowledge.net/METDATA/data/metdata_elevationdata.nc'
 }
 ELEV_FILES = {
     'GLDAS': 'GLDASp5_elevation_025d.nc4',
     'NLDAS': 'NLDAS_elevation.nc4',
-    'gridMET': 'gridMET_elevation.nc',
-}
-MASK_URLS = {
-    'NLDAS': 'https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_masks-veg-soil.nc4',
-}
-MASK_FILES = {
-    'NLDAS': 'NLDAS_masks-veg-soil.nc4',
+    'gridMET': 'gridMET_elevation_mask.nc',
 }
 URLS = {
     'GLDAS': 'https://hydro1.gesdisc.eosdis.nasa.gov/data/GLDAS/GLDAS_NOAH025_3H.2.1',
@@ -61,50 +57,6 @@ INTERVALS = {       # Data interval in hours
     'GLDAS': 3,
     'NLDAS': 1,
 }
-NC_FIELDS = {
-    'ELEV': {
-        'GLDAS': 'GLDAS_elevation',
-        'NLDAS': 'NLDAS_elev',
-        'gridMET': 'elevation',
-    },
-    'MASK': {
-        'GLDAS': '',
-        'NLDAS': 'CONUS_mask',
-    },
-    'PRCP': {
-        'GLDAS': 'Rainf_f_tavg',
-        'NLDAS': 'Rainf',
-    },
-    'TMP': {
-        'GLDAS': 'Tair_f_inst',
-        'NLDAS': 'Tair',
-    },
-    'Q': {
-        'GLDAS': 'Qair_f_inst',
-        'NLDAS': 'Qair',
-    },
-    'UWIND': {
-        'GLDAS': 'Wind_f_inst',
-        'NLDAS': 'Wind_E',
-    },
-    'VWIND': {
-        'GLDAS': 'Wind_f_inst',
-        'NLDAS': 'Wind_N',
-    },
-    'SOLAR': {
-        'GLDAS': 'SWdown_f_tavg',
-        'NLDAS': 'SWdown',
-    },
-    'LONGWAVE': {
-        'GLDAS': 'LWdown_f_tavg',
-        'NLDAS': 'LWdown',
-    },
-    'PRES': {
-        'GLDAS': 'Psurf_f_inst',
-        'NLDAS': 'PSurf',
-    },
-}
-
 GRIDMET_VARS = {
     'pr': 'precipitation_amount',
     'tmmx': 'air_temperature',
@@ -223,7 +175,7 @@ def read_all_grids(ldas):
         elev_array = nc[NC_FIELDS['ELEV'][ldas]][:, :]
         elevs = elev_array.flatten()
 
-    with Dataset(f'{DATA_DIR}/{MASK_FILES[ldas]}') as nc:
+    with Dataset(MASK_FILES[ldas]) as nc:
         mask_array = nc[NC_FIELDS['MASK'][ldas]][0]
 
         lats, lons = np.meshgrid(nc['lat'][:], nc['lon'][:], indexing='ij')
@@ -388,8 +340,6 @@ def process_day(ldas, t0, grids, strs):
 def process_year(ldas, year, grids, strs):
     '''Process one day of LDAS data and write them to meteorological files
     '''
-    print(f'    {year}')
-
     ncs = {}
     for v in GRIDMET_VARS:
         fn = f'{DATA_DIR}/{ldas}/{v}_{year}.nc'
