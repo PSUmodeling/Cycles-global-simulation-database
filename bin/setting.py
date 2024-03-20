@@ -113,6 +113,7 @@ MASK_URLS = {
 MASK_FILES = {
     'NLDAS': f'{DATA_DIR}/NLDAS_masks-veg-soil.nc4',
     'gridMET': f'{DATA_DIR}/gridMET_elevation_mask.nc',
+    'GLDAS': f'{DATA_DIR}/GLDASp5_landmask_025d.nc4',
 }
 RAINFED_CROPLAND = [10, 11, 12]
 IRRIGATED_CROPLAND = [20]
@@ -164,7 +165,7 @@ NC_FIELDS = {
         'gridMET': 'elevation',
     },
     'MASK': {
-        'GLDAS': '',
+        'GLDAS': 'GLDAS_mask',
         'NLDAS': 'CONUS_mask',
         'gridMET': 'elevation',     # For gridMET, mask and elevation are the same file
     },

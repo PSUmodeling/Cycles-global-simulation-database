@@ -5,7 +5,6 @@ import numpy as np
 import os
 import pandas as pd
 import rioxarray
-from netCDF4 import Dataset
 from setting import CROPS
 from setting import LU_TYPES
 from setting import LOOKUP_DIR
@@ -15,7 +14,8 @@ from setting import CROP_VARS
 from setting import GADM_CSV
 from setting import GEOTIFFS
 from setting import FILTERED
-from setting import GLDAS_MASK
+from my_funcs import read_grids
+from my_funcs import find_grid
 
 CROP_LA1 = 89.0 + 23.0 / 24.0
 CROP_LO1 = 179.0 + 23.0 / 24.0
@@ -28,61 +28,6 @@ CROP_J = lambda y: int(round((CROP_LA1 - y) / CROP_DJ))
 CROP_IDX = lambda x, y: CROP_J(y) * CROP_NI + CROP_I(x)
 
 _country = ""
-
-def read_gldas_grids():
-    '''Read in GLDAS grid information from mask/elevation file
-
-    Use mask/elevation netCDF file to read in the grids, and create a land mask to filter out open water grids.
-    '''
-
-    # Read in grids and land/sea mask. Grid boxes made up of more than 50% water are assigned a "water" value of 0 in
-    # the GLDAS land/sea mask, while all other grid boxes receive a "land" value of 1.
-    with Dataset(GLDAS_MASK) as nc:
-        mask_array = nc["GLDAS_mask"][0]
-        lats, lons = np.meshgrid(nc["lat"][:], nc["lon"][:], indexing="ij")
-
-    # Mask sea grid lats/lons as nan
-    lats[mask_array == 0] = np.nan
-    lons[mask_array == 0] = np.nan
-
-    return [lats, lons], mask_array
-
-
-def closest_grid(lat, lon, coord):
-    '''Find closest grid to an input site
-    '''
-    lats = coord[0]
-    lons = coord[1]
-    dist = np.sqrt((lons - lon)**2 + (lats - lat)**2)
-    closest = np.unravel_index(np.argmin(dist, axis=None), dist.shape)
-
-    return closest
-
-
-def find_grid(lat, lon, coord, mask_array):
-    '''Find closest land grid to an input site
-
-    This function finds the closest unmasked grid and the closest masked grid to the specified site. By comparing the
-    two grids, it will determine if the specified grid is a land point.
-    '''
-
-    closest = (IND_J('GLDAS', lat), IND_I('GLDAS', lon))
-
-    if mask_array[closest] == 0:    # If closest grid is water, find closest land grid
-        closest = closest_grid(lat, lon, coord)
-        print(f"Nearest GLDAS land grid to {lat:.3f}x{lon:.3f} is {coord[0][closest]}x{coord[1][closest]}")
-
-    _lat = coord[0][closest]
-    _lon = coord[1][closest]
-
-    grid = f"GLDAS_%.3f%sx%.3f%s.weather" % (
-        abs(_lat),
-        "S" if _lat < 0.0 else "N",
-        abs(_lon),
-        "W" if _lon < 0.0 else "E"
-    )
-
-    return grid
 
 
 def calculate_crop_fractions(points, crop, coord, mask_array, country, gid, lat, lon):
@@ -129,7 +74,7 @@ def calculate_crop_fractions(points, crop, coord, mask_array, country, gid, lat,
     # Set weather and soil files
     for t in LU_TYPES:
         if fractions[t] > 0.0:
-            grids[t] = find_grid(lats[t], lons[t], coord, mask_array)
+            grids[t] = find_grid('GLDAS', lats[t], lons[t], coord, mask_array)
             soils[t] = f"{crop}_{t.lower()}_sg_{gid}.soil"
 
     return (
@@ -174,11 +119,10 @@ def write_output(df, crop, lu):
 
 
 def main(crop):
-
-    os.makedirs(LOOKUP_DIR, exist_ok=True)
+    os.makedirs(LOOKUP_DIR + '/global/', exist_ok=True)
 
     # Read GLDAS grids
-    coord, mask_array = read_gldas_grids()
+    coord, mask_array = read_grids('GLDAS')
 
     # Read administrative region boundaries
     print("Read gadm file")
