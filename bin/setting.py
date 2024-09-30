@@ -202,3 +202,13 @@ NC_FIELDS = {
         'NLDAS': 'PSurf',
     },
 }
+
+WEATHER_DIR = './weather'
+WEATHER_FILE_START = {
+    'GLDAS': 2000,
+    'NLDAS': 1979,
+    'gridMET': 1979,
+}
+WEATHER_FILE_END = 2023
+WEATHER_FILE_ARCHIVE = lambda ldas: \
+    f'{ldas}_{"global" if ldas == "GLDAS" else "CONUS"}_{WEATHER_FILE_START[ldas]}-{WEATHER_FILE_END}_{VERSION}.7z'

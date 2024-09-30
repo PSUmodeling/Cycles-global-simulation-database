@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import numpy as np
 import os
 import pandas as pd
 import subprocess
@@ -14,130 +13,125 @@ from setting import LOOKUP_CSV
 from setting import LOOKUP_CONUS_CSV
 from setting import SEVEN_ZIP
 from setting import SOIL_ARCHIVE
-
-WEATHER_DIR = "weather"
+from setting import WEATHER_DIR
+from setting import WEATHER_FILE_ARCHIVE
 
 
 def main(args):
 
     crop = args.crop
-    range = args.range
+    ldas = args.ldas
+    directory = args.directory
 
-    strs = ""
-    region = []
-    for s in args.region:
-        strs += " " + s
-    region_strs = strs.replace(",", "_").replace(" ", "")
-    for s in strs.split(","):
-        region.append(s.strip())
+    os.makedirs(directory, exist_ok=True)
 
-    print(f"Target region: {', '.join(region)}")
+    # Read regions from an input file
+    lines = []
+    with open('regions.csv') as f:
+        _lines = f.readlines()
+    lines = [line for line in _lines if not line.strip().startswith("#")]
+    print(lines)
 
-    os.makedirs(f"{region_strs}_{crop}", exist_ok=True)
+    dfs = {}
 
-    weather = []
-
-    # Generate look-up tables
     for lu in LU_TYPES:
-        csv = LOOKUP_CSV(crop, lu) if range == "global" else LOOKUP_CONUS_CSV(crop, lu)
-
         # Read lookup table
+        csv = LOOKUP_CSV(crop, lu) if ldas == "GLDAS" else LOOKUP_CONUS_CSV(crop, lu, ldas)
         try:
-            df = pd.read_csv(csv)
+            lookup = pd.read_csv(csv)
         except:
             print(f"Error reading {csv}.")
             continue
 
         print(f"Filter {lu.lower()} look-up table")
-        df = df[df["NAME_0"] == region[0]]
 
-        if len(region) > 1:
-            df = df[df["NAME_1"] == region[1]]
-        if len(region) > 2:
-            df = df[df["NAME_2"] == region[2]]
+        dfs[lu] = pd.DataFrame()
+        for line in lines:
+            region = line.strip().split(',')
 
-        if df.empty:
-            print(f"No {lu.lower()} {crop} records found for {', '.join(region)}.")
-            continue
+            _df = lookup[lookup["NAME_0"] == region[-1].strip()]
+            if len(region) > 1:
+                _df = _df[_df["NAME_1"] == region[-2].strip()]
+            if len(region) > 2:
+                _df = _df[_df["NAME_2"] == region[-3].strip()]
 
-        df.to_csv(
-            f"{region_strs}_{crop}/{csv.replace(range, region_strs)[len(LOOKUP_DIR):]}",
-            index=False,
-        )
+            if _df.empty:
+                print(f"No {lu.lower()} {crop} records found for {','.join(region)}.")
+                continue
+
+            _df['IrrigationType'] = lu
+            dfs[lu] = pd.concat([dfs[lu], _df])
+
+        if dfs[lu].empty: continue
+
+        dfs[lu] = dfs[lu].drop_duplicates()
+        print(dfs[lu])
 
         # Get soil data
-        print(f"Generate {lu.lower()} soil file archive")
-        for w in df["Soil"]:
-            cmd = [
-                SEVEN_ZIP,
-                "e",
-                SOIL_ARCHIVE(crop, lu),
-                f"-o{region_strs}_{crop}",
-                w,
-                "-y",
-            ]
-            subprocess.run(
-                cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+        print(f"Extract {lu.lower()} soil file archive")
 
-        if len(region) != 3:
-            cmd = f"{SEVEN_ZIP} a -sdel {region_strs}_{crop}/{crop}_{lu.lower()}_{region_strs}_soil.7z ./{region_strs}_{crop}/{crop}_{lu.lower()}*.soil"
-            subprocess.run(
-                cmd,
-                shell=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+        cmd = [
+            SEVEN_ZIP,
+            "e",
+            SOIL_ARCHIVE(crop, lu),
+            f"-o{directory}",
+        ]
 
-        # Get weather data
-        for w in df["Weather"].unique():
-            weather.append(w)
+        for s in dfs[lu]["Soil"]:
+            cmd.append(s)
 
-    weather_archive = "GLDAS_2000-2021.7z" if range == "global" else "NLDAS_CONUS_1979-2022.7z"
-    ldas = "GLDAS" if range == "global" else "NLDAS"
+        cmd.append("-y")
 
-    print(f"Generate weather file archive")
-    if len(weather):
-        for w in np.unique(np.array(weather)):
-            cmd = [
-                SEVEN_ZIP,
-                "e",
-                f"{WEATHER_DIR}/{weather_archive}",
-                f"-o{region_strs}_{crop}",
-                w,
-                "-y",
-            ]
-            subprocess.run(
-                cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+        subprocess.run(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+    df = pd.DataFrame()
+    for lu in LU_TYPES:
+        df = pd.concat([df, dfs[lu]])
+
+    if df.empty:
+        exit('No regions found in the lookup table.')
+
+    print(f"Extract weather files from archive")
+
+    weather_archive = WEATHER_FILE_ARCHIVE(ldas)
+
+    cmd = [
+        SEVEN_ZIP,
+        "e",
+        f"{WEATHER_DIR}/{weather_archive}",
+        f"-o{directory}",
+    ]
+
+    for w in df["Weather"].unique():
+        cmd.append(w)
+
+    cmd.append("-y")
+
+    subprocess.run(
+        cmd,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    df.to_csv(f"{directory}/lut.csv", index=False)
 
 
-        if len(region) != 3:
-            cmd = f"{SEVEN_ZIP} a -sdel {region_strs}_{crop}/{ldas}_{crop}_{region_strs}_weather.7z ./{region_strs}_{crop}/*.weather"
-            subprocess.run(
-                cmd,
-                shell=True,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+    #    if len(region) != 3:
+    #        cmd = f"{SEVEN_ZIP} a -sdel {region_strs}_{crop}/{ldas}_{crop}_{region_strs}_weather.7z ./{region_strs}_{crop}/*.weather"
+    #        subprocess.run(
+    #            cmd,
+    #            shell=True,
+    #            stdout=subprocess.DEVNULL,
+    #            stderr=subprocess.DEVNULL,
+    #        )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Filter lookup tables using countries/regions")
-    parser.add_argument(
-        "--region",
-        nargs="+",
-        required=True,
-        help="The region can be any country, Level 1 region, or Level 2 region in the world. To specify a Level 1 or Level 2 region,\
-            use commas to separate different levels, ranking from country to Level 2. For example, to filter areas in \
-            the United States, use '--region United States'. To filter areas in Pennsylvania, use \
-            '--region United State, Pennsylvania'. To get records of Centre county, use \
-            '--region United State, Pennsylvania, Centre'."
-    )
     parser.add_argument(
         "--crop",
         required=True,
@@ -145,11 +139,15 @@ if __name__ == "__main__":
         help="Crop name",
     )
     parser.add_argument(
-        "--range",
-        default="global",
-        choices=["global", "conus"],
-        help="Filtering global look-up tables will generate weather files from GLDAS forcing data. Filtering CONUS\
-            look-up tables will generate weather files from NLDAS-2 forcing data.",
+        "--ldas",
+        required=True,
+        choices=["GLDAS", "NLDAS", "gridMET"],
+        help="LDAS type for weather files.",
+    )
+    parser.add_argument(
+        "--directory",
+        default="./",
+        help="Directory to save output.",
     )
     args = parser.parse_args()
 
