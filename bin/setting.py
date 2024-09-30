@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "3.3"
+VERSION = "3.4"
 
 CROPS = {
     "bean": "Pulses",
@@ -25,7 +25,7 @@ SG_VARS = {
     "bdod": 100.0,
     "clay": 10.0,
     "sand": 10.0,
-    "soc": 58.0,
+    "soc": 100.0,
     #"cec": 10.0,
     #"cfvo": 10.0,
     #"nitrogen": 100000.0,

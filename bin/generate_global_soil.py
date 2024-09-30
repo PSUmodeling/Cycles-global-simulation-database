@@ -95,7 +95,7 @@ def main(crop):
                 filled = []
 
                 f.write(f"# Cycles soil file for {row['NAME_2'] + ', ' if row['NAME_2'] else ''}{row['NAME_1'] + ', ' if row['NAME_1'] else ''}{row['NAME_0']}\n#\n")
-                f.write(f"# Clay, sand, organic matter and bulk density are obtained from SoilGrids.\n")
+                f.write(f"# Clay, sand, soil organic carbon, and bulk density are obtained from SoilGrids.\n")
                 f.write(f"# The data are sampled at Latitude {row['CropLat']}, Longitude {row['CropLon']}.\n")
                 f.write(f"# NO3, NH4, and fractions of horizontal and vertical bypass flows are default empirical values.\n#\n")
                 if hsg == -999:
@@ -112,7 +112,7 @@ def main(crop):
 
                 f.write("%-15s\t%s\n" % ("TOTAL_LAYERS", "6"))
                 f.write(('%-7s\t'*12 + '%s\n') % (
-                    "LAYER", "THICK", "CLAY", "SAND", "ORGANIC", "BD", "FC", "PWP", "SON", "NO3", "NH4", "BYP_H", "BYP_V"
+                    "LAYER", "THICK", "CLAY", "SAND", "SOC", "BD", "FC", "PWP", "SON", "NO3", "NH4", "BYP_H", "BYP_V"
                 ))
 
                 f.write(('%-7s\t'*12 + '%s\n') % (
