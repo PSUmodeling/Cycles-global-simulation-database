@@ -21,6 +21,7 @@ START_DATES = {
     'GLDAS': datetime.strptime('2000-01-01', '%Y-%m-%d'),
     'NLDAS': datetime.strptime('1979-01-01', '%Y-%m-%d'),
     'gridMET': datetime.strptime('1979-01-01', '%Y-%m-%d'),
+    'MACA': datetime.strptime('2051-01-01', '%Y-%m-%d'),
 }
 START_HOURS = {
     'GLDAS': 3,
@@ -39,6 +40,7 @@ URLS = {
     'GLDAS': 'https://hydro1.gesdisc.eosdis.nasa.gov/data/GLDAS/GLDAS_NOAH025_3H.2.1',
     'NLDAS': 'https://hydro1.gesdisc.eosdis.nasa.gov/data/NLDAS/NLDAS_FORA0125_H.2.0',
     'gridMET': 'http://www.northwestknowledge.net/metdata/data/',
+    'MACA': 'http://thredds.northwestknowledge.net:8080/thredds/fileServer/MACAV2',
 }
 EXTENSIONS = {
     'GLDAS': 'nc4',
@@ -66,13 +68,23 @@ GRIDMET_VARS = {
     'rmin': 'relative_humidity',
     'vs': 'wind_speed',
 }
+MACA_VARS = {
+    'pr': 'precipitation',
+    'tasmax': 'air_temperature',
+    'tasmin': 'air_temperature',
+    'rsds': 'surface_downwelling_shortwave_flux_in_air',
+    'rhsmax': 'relative_humidity',
+    'rhsmin': 'relative_humidity',
+    'uas': 'eastward_wind',
+    'vas': 'northward_wind',
+}
 
 
 def ldas_download(ldas, d):
-    '''Download LDAS forcing files
+    """Download LDAS forcing files
 
     Download LDAS netCDF forcing files from GES DISC.
-    '''
+    """
     print(f'    Downloading {d.strftime("%Y-%m-%d")} data...')
 
     # Check number of files already downloaded
@@ -135,11 +147,34 @@ def gridmet_download(ldas, year):
         )
 
 
+def maca_download(ldas, start_year, end_year, model, rcp):
+    """Download MACA forcing files
+    """
+    os.makedirs(f'{DATA_DIR}/{ldas}/{model}/rcp{rcp}', exist_ok=True)
+
+    print(f'    Downloading {start_year}-{end_year} data...')
+
+    for var in MACA_VARS:
+        cmd = [
+            'wget',
+            '-nc',
+            '-c',
+            '-nd',
+            f'{URLS[ldas]}/{model}/macav2metdata_{var}_{model}_r1i1p1_rcp{rcp}_{start_year}_{end_year}_CONUS_daily.nc',
+            '-P',
+            f'{DATA_DIR}/{ldas}/{model}/rcp{rcp}',
+        ]
+        subprocess.run(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+
 def read_all_grids(ldas):
     """Read in reanalysis grid information from mask and elevation files
 
     Use mask and elevation netCDF files to read in land grids and elevations.
-    water grids.
     """
     # Download mask file
     cmd = [
@@ -192,8 +227,11 @@ def read_all_grids(ldas):
 
 
 def read_grids_from_file(ldas):
-    '''Read in reanalysis grids from a location file
-    '''
+    """Read in reanalysis grids from a location file
+    """
+    # MACA shares the same grid with gridMET
+    ldas = 'gridMET' if ldas == 'MACA' else ldas
+
     # Download elevation file
     if ldas != 'gridMET':
         cmd = [
@@ -240,7 +278,11 @@ def read_grids_from_file(ldas):
     return [lats, lons], grids, elevs
 
 
-def get_file_names(ldas, coord, grids):
+def get_file_names(ldas, coord, grids, model, rcp):
+    """Get names of weather files
+
+    Weather files should be named after the LDAS and lat/lon
+    """
     lats = coord[0]
     lons = coord[1]
 
@@ -255,15 +297,18 @@ def get_file_names(ldas, coord, grids):
             abs(grid_lat), 'S' if grid_lat < 0.0 else 'N', abs(grid_lon), 'W' if grid_lon < 0.0 else 'E'
         )
 
-        fns.append(f'{WEATHER_DIR}/{ldas}_{_grid}.weather')
+        if ldas == 'MACA':
+            fns.append(f'{WEATHER_DIR}/macav2metdata_{model}_rcp{rcp}_{_grid}.weather')
+        else:
+            fns.append(f'{WEATHER_DIR}/{ldas}_{_grid}.weather')
         strs.append([])
 
     return fns, strs
 
 
 def init_weather_files(coord, strs, grids, elevs):
-    '''Create meteorological files and write headers
-    '''
+    """Create weather files and write headers
+    """
     print('Writing headers')
 
     lats = coord[0]
@@ -284,9 +329,9 @@ def init_weather_files(coord, strs, grids, elevs):
             ('####', '###', 'mm', 'degC', 'degC', 'MJ/m2', '%', '%', 'm/s'))
 
 
-def process_day(ldas, t0, grids, strs):
-    '''Process one day of LDAS data and write them to meteorological files
-    '''
+def process_ldas(ldas, t0, grids, strs):
+    """Process daily LDAS data and write them to meteorological files
+    """
     # Arrays to store daily values
     var = {
         'PRCP': [],
@@ -337,9 +382,9 @@ def process_day(ldas, t0, grids, strs):
         )
 
 
-def process_year(ldas, year, grids, strs):
-    '''Process one day of LDAS data and write them to meteorological files
-    '''
+def process_gridmet(ldas, year, grids, strs):
+    """Process annual gridMET data and write them to weather files
+    """
     ncs = {}
     for v in GRIDMET_VARS:
         fn = f'{DATA_DIR}/{ldas}/{v}_{year}.nc'
@@ -372,11 +417,48 @@ def process_year(ldas, year, grids, strs):
         ncs[v].close()
 
 
+def process_maca(ldas, model, rcp, start_year, end_year, grids, strs):
+    """Process muti-year MACA data and write them to weather files
+    """
+    ncs = {}
+    for v in MACA_VARS:
+        fn = f'{DATA_DIR}/{ldas}/{model}/rcp{rcp}/macav2metdata_{v}_{model}_r1i1p1_rcp{rcp}_{start_year}_{end_year}_CONUS_daily.nc'
+        ncs[v] = Dataset(fn, 'r')
+
+    # Get number of days in current file
+    days = ncs['pr']['time'][:]
+    ndays = int(len(days))
+
+    values = {}
+    for d in range(ndays):
+        t = datetime(1900, 1, 1) + timedelta(days=int(days[d]))
+
+        print(t.strftime('    %Y-%m-%d'))
+
+        for v in MACA_VARS:
+            values[v] = np.flipud(ncs[v][MACA_VARS[v]][d]).flatten()[grids]
+
+        for kgrid in range(len(grids)):
+            strs[kgrid].append(f'%-15s\t{"%-#.5g" if values["pr"][kgrid] >= 1.0 else "%-.4f"}\t%-7.2f\t%-7.2f\t%-7.3f\t%-7.2f\t%-7.2f\t%-8.2f\n' % (
+                t.strftime('%Y   \t%j'),
+                values['pr'][kgrid],
+                values['tasmax'][kgrid] - 273.15,
+                values['tasmin'][kgrid] - 273.15,
+                values['rsds'][kgrid] * 86400.0 / 1.0E6,
+                values['rhsmax'][kgrid],
+                values['rhsmin'][kgrid],
+                np.sqrt(values['uas'][kgrid] ** 2 + values['vas'][kgrid] ** 2),
+            ))
+
+    for v in MACA_VARS:
+        ncs[v].close()
+
+
 def read_var(ldas, grids, nc):
-    '''Read meteorological variables of an array of desired grids from netCDF
+    """Read meteorological variables of an array of desired grids from netCDF
 
     The netCDF variable arrays are flattened to make reading faster
-    '''
+    """
     _prcp  = nc[NC_FIELDS['PRCP'][ldas]][0].flatten()[grids]
     if ldas == 'NLDAS':     # NLDAS precipitation unit is kg m-2. Convert to kg m-2 s-1 to be consistent with GLDAS
         _prcp /= INTERVALS[ldas] * 3600.0
@@ -410,16 +492,18 @@ def read_var(ldas, grids, nc):
 
     return _var
 
+
 def write_to_files(m, fns, strs):
     for k in range(len(fns)):
-        with open(fns[k], mode=m) as f:
-            f.writelines(strs[k])
+        with open(fns[k], mode=m) as f: f.writelines(strs[k])
 
 
 def main(params):
     start_date = params['start']
     end_date = params['end']
     ldas = params['ldas']
+    model = params['model'] if ldas == 'MACA' else None
+    rcp = params['rcp'] if ldas == 'MACA' else None
 
     if start_date < START_DATES[ldas]: exit('Start date error.')
 
@@ -434,7 +518,7 @@ def main(params):
         coord, grids, elev_array = read_grids_from_file(ldas)
 
     print('Initialize files')
-    fns, strs = get_file_names(ldas, coord, grids)
+    fns, strs = get_file_names(ldas, coord, grids, model, rcp)
 
     print(f'Create {ldas} forcing data from {datetime.strftime(start_date, "%Y-%m-%d")} to '
         f'{datetime.strftime(end_date, "%Y-%m-%d")}:')
@@ -458,13 +542,16 @@ def main(params):
             ldas_download(ldas, cday)
 
             ## Process each day's data
-            process_day(ldas, cday, grids, strs)
+            process_ldas(ldas, cday, grids, strs)
 
             cday += timedelta(days=1)
     elif ldas == 'gridMET':
         for year in range(start_date.year, end_date.year + 1):
             gridmet_download(ldas, year)
-            process_year(ldas, year, grids, strs)
+            process_gridmet(ldas, year, grids, strs)
+    elif ldas == 'MACA':
+        maca_download(ldas, start_date.year, end_date.year, model, rcp)
+        process_maca(ldas, model, rcp, start_date.year, end_date.year, grids, strs)
 
     # Write to weather files
     print('Write to files')
@@ -489,8 +576,41 @@ def _main():
         '--ldas',
         default='NLDAS',
         type=str,
-        choices=['GLDAS', 'NLDAS', 'gridMET'],
+        choices=['GLDAS', 'NLDAS', 'gridMET', 'MACA'],
         help='Reanalysis data',
+    )
+    parser.add_argument(
+        '--model',
+        type=str,
+        choices=[
+            'bcc-csm1-1',
+            'bcc-csm1-1-m',
+            'BNU-ESM',
+            'CanESM2',
+            'CCSM4',
+            'CNRM-CM5',
+            'CSIRO-Mk3-6-0',
+            'GFDL-ESM2G',
+            'GFDL-ESM2M',
+            'HadGEM2-CC365',
+            'HadGEM2-ES365',
+            'inmcm4',
+            'IPSL-CM5A-LR',
+            'IPSL-CM5A-MR',
+            'IPSL-CM5B-LR',
+            'MIROC5',
+            'MIROC-ESM',
+            'MIROC-ESM-CHEM',
+            'MRI-CGCM3',
+            'NorESM1-M',
+        ],
+        help='CMIP5 model',
+    )
+    parser.add_argument(
+        '--rcp',
+        type=str,
+        choices=['45', '85'],
+        help='RCP',
     )
     args = parser.parse_args()
 
