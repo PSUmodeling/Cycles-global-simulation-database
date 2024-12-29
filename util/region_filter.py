@@ -30,7 +30,6 @@ def main(args):
     with open('regions.csv') as f:
         _lines = f.readlines()
     lines = [line for line in _lines if not line.strip().startswith("#")]
-    print(lines)
 
     dfs = {}
 
@@ -49,7 +48,7 @@ def main(args):
         for line in lines:
             region = line.strip().split(',')
 
-            _df = lookup[lookup["NAME_0"] == region[-1].strip()]
+            _df = lookup[lookup["NAME_0"] == region[-1].strip()].copy()
             if len(region) > 1:
                 _df = _df[_df["NAME_1"] == region[-2].strip()]
             if len(region) > 2:
@@ -59,7 +58,7 @@ def main(args):
                 print(f"No {lu.lower()} {crop} records found for {','.join(region)}.")
                 continue
 
-            _df['IrrigationType'] = lu
+            _df.loc[:, 'IrrigationType'] = lu
             dfs[lu] = pd.concat([dfs[lu], _df])
 
         if dfs[lu].empty: continue
