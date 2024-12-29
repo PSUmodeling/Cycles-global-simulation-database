@@ -1,0 +1,50 @@
+#!/bin/bash
+
+#SBATCH --nodes=1
+#SBATCH --ntasks=4
+#SBATCH --time=48:00:00
+#SBATCH --mem-per-cpu=20G
+#SBATCH --mail-type=BEGIN,END
+#SBATCH --mail-user=yshi@psu.edu
+
+# Need to define model and RCP in the command line
+# Job should be submitted as
+# sbatch --export=MODEL=CanESM2,RCP=45 maca.job
+
+echo "Job started on `hostname` at `date`"
+jobstart=`date +%s`
+
+source activate my_root
+
+# Get version number
+CUR_VERS=$(grep -m 1 "VERSION" ./bin/setting.py |awk '{print $3}'|tr -d '"')
+
+python3 bin/LDAS-to-Cycles.py --start 2006-01-01 --end 2010-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2011-01-01 --end 2015-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2016-01-01 --end 2020-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2021-01-01 --end 2025-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2026-01-01 --end 2030-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2031-01-01 --end 2035-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2036-01-01 --end 2040-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2041-01-01 --end 2045-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2046-01-01 --end 2050-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2051-01-01 --end 2055-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2056-01-01 --end 2060-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2061-01-01 --end 2065-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2066-01-01 --end 2070-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2071-01-01 --end 2075-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2076-01-01 --end 2080-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2081-01-01 --end 2085-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2086-01-01 --end 2090-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2091-01-01 --end 2095-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+python3 bin/LDAS-to-Cycles.py --start 2096-01-01 --end 2099-12-31 --ldas MACA --model ${MODEL} --rcp ${RCP}
+
+7zzs a MACAv2_${MODEL}_rcp${RCP}_CONUS_2006-2099_${CUR_VERS}.7z ./weather/*.weather
+
+jobend=`date +%s`
+echo -e "\nJob ended at `date`"
+dt=$((jobend - jobstart))
+ds=$((dt % 60))
+dm=$(((dt / 60) % 60))
+dh=$((dt / 3600))
+printf "Elapsed time %d:%02d:%02d\n" $dh $dm $ds
