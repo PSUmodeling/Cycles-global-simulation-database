@@ -104,8 +104,9 @@ python3 ./bin/LDAS-to-Cycles.py --ldas NLDAS --start 2020-01-01 --end 2020-12-31
 python3 ./bin/LDAS-to-Cycles.py --ldas NLDAS --start 2021-01-01 --end 2021-12-31
 python3 ./bin/LDAS-to-Cycles.py --ldas NLDAS --start 2022-01-01 --end 2022-12-31
 python3 ./bin/LDAS-to-Cycles.py --ldas NLDAS --start 2023-01-01 --end 2023-12-31
+python3 ./bin/LDAS-to-Cycles.py --ldas NLDAS --start 2024-01-01 --end 2024-12-31
 
-7zzs a NLDAS_CONUS_1979-2023_${CUR_VERS}.7z ./weather/NLDAS*.weather
+7zzs a NLDAS_CONUS_1979-2024_${CUR_VERS}.7z ./weather/NLDAS*.weather
 
 # Generate weather files from GLDAS
 
@@ -136,8 +137,9 @@ python3 ./bin/LDAS-to-Cycles.py --ldas GLDAS --start 2020-01-01 --end 2020-12-31
 python3 ./bin/LDAS-to-Cycles.py --ldas GLDAS --start 2021-01-01 --end 2021-12-31
 python3 ./bin/LDAS-to-Cycles.py --ldas GLDAS --start 2022-01-01 --end 2022-12-31
 python3 ./bin/LDAS-to-Cycles.py --ldas GLDAS --start 2023-01-01 --end 2023-12-31
+python3 ./bin/LDAS-to-Cycles.py --ldas GLDAS --start 2024-01-01 --end 2024-12-31
 
-7zzs a GLDAS_2000-2023_${CUR_VERS}.7z ./weather/GLDAS*.weather
+7zzs a GLDAS_2000-2024_${CUR_VERS}.7z ./weather/GLDAS*.weather
 
 # Generate weather files from gridMET
 
@@ -189,8 +191,9 @@ python3 ./bin/LDAS-to-Cycles.py --ldas gridMET --start 2020-01-01 --end 2020-12-
 python3 ./bin/LDAS-to-Cycles.py --ldas gridMET --start 2021-01-01 --end 2021-12-31
 python3 ./bin/LDAS-to-Cycles.py --ldas gridMET --start 2022-01-01 --end 2022-12-31
 python3 ./bin/LDAS-to-Cycles.py --ldas gridMET --start 2023-01-01 --end 2023-12-31
+python3 ./bin/LDAS-to-Cycles.py --ldas gridMET --start 2024-01-01 --end 2024-12-31
 
-7zzs a gridMET_CONUS_1979-2023_${CUR_VERS}.7z ./weather/gridMET*.weather
+7zzs a gridMET_CONUS_1979-2024_${CUR_VERS}.7z ./weather/gridMET*.weather
 
 jobend=`date +%s`
 echo -e "\nJob ended at `date`"
