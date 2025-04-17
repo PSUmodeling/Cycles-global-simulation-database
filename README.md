@@ -1,12 +1,17 @@
-# Cycles global simulation database version 3.4
+# Cycles global simulation database version 3.5
 
-The Cycles global simulation database version 3.4 provides crop lookup tables, Cycles soil files, and Cycles weather files (1979 to present in CONUS, 2000 to present globally).
+The Cycles global simulation database version 3.5 provides crop lookup tables, Cycles soil files, and Cycles weather files (1979 to present in CONUS, 2000 to present globally).
 This version supports the simulations of major crops in any Level-3 (e.g., county level) administrative region in the world.
 The crops that can be simulated include **bean, cassava, lentil, maize, millet, potato, rice, sorghum, soybean, sweet potato, and wheat**.
 Each crop is classified into two categories based on irrigation types: rainfed and irrigated.
 All versions prior to v2.0 were developed by Dr. Lorne Leonard.
 
 ## What's new
+
+### v3.5
+
+- Added 2024 data to weather files.
+- Compatible with Cycles v1.4.1+.
 
 ### v3.4
 
@@ -58,11 +63,11 @@ All versions prior to v2.0 were developed by Dr. Lorne Leonard.
 The `crop_lookup` directory contains crop lookup tables that include all 3rd-level (or above) administrative regions where major crops are harvested, along with the names of corresponding weather files and soil files for the regions.
 The lookup tables are provided in `csv` format, and are named using the convention
 `[crop name]_[irrigation type]_[range]_lookup_[file version].csv`.
-For example, `maize_irrigated_global_lookup_3.4.csv` can be interpreted as follows:
+For example, `maize_irrigated_global_lookup_3.5.csv` can be interpreted as follows:
 - [crop name] = maize
 - [irrigation type] = irrigated
 - [range] = global
-- [File version] = 3.4
+- [File version] = 3.5
 
 Each lookup table file is structured as:
 Column          | Description
@@ -140,7 +145,7 @@ Close-seeded or broadcast legumes or rotation meadow | C & T      | Good        
 ## Weather file archives
 
 Weather file archives are stored in the `weather` directory.
-The `NLDAS_CONUS_1979-2023_3.4.7z` archive contains 52,476 Cycles weather files for the CONUS region, generated from the primary forcing data for Phase 2 of the North American Land Data Assimilation System (NLDAS-2).
-The `gridMET_1979-2023_3.4.7z` archive contains all 9,216 Cycles weather files that appear in the CONUS look-up tables, generated from the gridMET dataset.
-The `GLDAS_2000-2023_3.4.7z` archive contains all 47,215 Cycles weather files that appear in the global look-up tables, generated from the primary forcing data for the Global Land Data Assimilation System (GLDAS).
-The weather files follow the naming convention `[LDAS]_[lat][N or S]_[lon][E or W].weather`, where `[LDAS]` can be either GLDAS or NLDAS, and `[lat]` and `[lon]` refer to the latitude and longitude of the corresponding grids.
+The `NLDAS_CONUS_1979-2024_3.5.7z` archive contains 52,476 Cycles weather files for the CONUS region, generated from the primary forcing data for Phase 2 of the North American Land Data Assimilation System (NLDAS-2).
+The `gridMET_1979-2024_3.5.7z` archive contains all 9,216 Cycles weather files that appear in the CONUS look-up tables, generated from the gridMET dataset.
+The `GLDAS_2000-2024_3.5.7z` archive contains all 47,215 Cycles weather files that appear in the global look-up tables, generated from the primary forcing data for the Global Land Data Assimilation System (GLDAS).
+The weather files follow the naming convention `[reanalysis]_[lat][N or S]_[lon][E or W].weather`, where `[reanalysis]` can be GLDAS, NLDAS or girdMET, and `[lat]` and `[lon]` refer to the latitude and longitude of the corresponding grids.
