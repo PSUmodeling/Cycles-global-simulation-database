@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-VERSION = "3.5"
+VERSION = "3.6"
 
 CROPS = {
     "bean": "Pulses",
@@ -107,14 +107,6 @@ LOOKUP_CONUS_CSV = lambda crop, lu, ldas: f"{LOOKUP_DIR}/conus/{crop}_{lu.lower(
 
 SOIL_ARCHIVE = lambda crop, lu: f"{SOIL_DIR}/{crop}_{lu.lower()}_global_soil_{VERSION}.7z"
 
-MASK_URLS = {
-    'NLDAS': 'https://ldas.gsfc.nasa.gov/sites/default/files/ldas/nldas/NLDAS_masks-veg-soil.nc4',
-}
-MASK_FILES = {
-    'NLDAS': f'{DATA_DIR}/NLDAS_masks-veg-soil.nc4',
-    'gridMET': f'{DATA_DIR}/gridMET_elevation_mask.nc',
-    'GLDAS': f'{DATA_DIR}/GLDASp5_landmask_025d.nc4',
-}
 RAINFED_CROPLAND = [10, 11, 12]
 IRRIGATED_CROPLAND = [20]
 MOSAIC_CROPLAND = [30, 40]
@@ -134,74 +126,6 @@ SEVEN_ZIP = "7zzs"
 COMPRESS = "./bin/compress.sh"
 
 GRIDS = lambda x: f'{DATA_DIR}/{x}_grids.txt'
-
-LA1 = {
-    'gridMET': 49.4,
-    'NLDAS': 25.0625,
-    'GLDAS': -59.875,
-}
-LO1 = {
-    'gridMET': -124.76667,
-    'NLDAS': -124.9375,
-    'GLDAS': -179.875,
-}
-DI = {
-    'gridMET': 1.0 / 24.0,
-    'NLDAS': 0.125,
-    'GLDAS': 0.25,
-}
-DJ = {
-    'gridMET': -1.0 / 24.0,
-    'NLDAS': 0.125,
-    'GLDAS': 0.25,
-}
-IND_J = lambda ldas, lat: int(round((lat - LA1[ldas]) / DJ[ldas]))
-IND_I = lambda ldas, lon: int(round((lon - LO1[ldas]) / DI[ldas]))
-
-NC_FIELDS = {
-    'ELEV': {
-        'GLDAS': 'GLDAS_elevation',
-        'NLDAS': 'NLDAS_elev',
-        'gridMET': 'elevation',
-    },
-    'MASK': {
-        'GLDAS': 'GLDAS_mask',
-        'NLDAS': 'CONUS_mask',
-        'gridMET': 'elevation',     # For gridMET, mask and elevation are the same file
-    },
-    'PRCP': {
-        'GLDAS': 'Rainf_f_tavg',
-        'NLDAS': 'Rainf',
-    },
-    'TMP': {
-        'GLDAS': 'Tair_f_inst',
-        'NLDAS': 'Tair',
-    },
-    'Q': {
-        'GLDAS': 'Qair_f_inst',
-        'NLDAS': 'Qair',
-    },
-    'UWIND': {
-        'GLDAS': 'Wind_f_inst',
-        'NLDAS': 'Wind_E',
-    },
-    'VWIND': {
-        'GLDAS': 'Wind_f_inst',
-        'NLDAS': 'Wind_N',
-    },
-    'SOLAR': {
-        'GLDAS': 'SWdown_f_tavg',
-        'NLDAS': 'SWdown',
-    },
-    'LONGWAVE': {
-        'GLDAS': 'LWdown_f_tavg',
-        'NLDAS': 'LWdown',
-    },
-    'PRES': {
-        'GLDAS': 'Psurf_f_inst',
-        'NLDAS': 'PSurf',
-    },
-}
 
 WEATHER_DIR = './weather'
 WEATHER_FILE_START = {
