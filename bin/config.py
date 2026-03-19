@@ -5,7 +5,6 @@ from pathlib import Path
 VERSION = '4.0'
 
 DATA_DIR = Path('/storage/work/yzs123/analyses/Cycles-global-simulation-database/data')
-GADM_PATH = DATA_DIR / 'gadm' / 'gadm_410_l3.shp'
 
 @dataclass
 class CropGridInfo:
