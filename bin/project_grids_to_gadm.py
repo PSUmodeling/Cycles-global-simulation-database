@@ -2,10 +2,11 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import xarray
+from cycles.gadm import read_gadm
 from pathlib import Path
 from shapely.geometry import Polygon
+from config import DATA_DIR, TEMP_DIR
 from config import CROPGRIDS
-from config import GADM_PATH
 from config import WGS84, CEA
 
 def main():
@@ -38,16 +39,16 @@ def main():
     )
     cropgrids_gdf['grid_area'] = cropgrids_gdf.to_crs(CEA).area
 
-    gadm = gpd.read_file(GADM_PATH)
+    gadm = read_gadm(DATA_DIR / 'gadm', 'global', 'county').reset_index()
     for gid in gadm['GID_0'].unique():
         # Perform spatial intersection between CROPGRIDS grid cells and GADM regions
         gdf = gpd.overlay(gadm[gadm['GID_0'] == gid], cropgrids_gdf, how='intersection')
         gdf['grid_fraction'] = gdf.to_crs(CEA).area / gdf['grid_area']
-        gdf = gdf[gdf['grid_fraction'] > 1.0E-3]
+        gdf = gdf[gdf['grid_fraction'] > 1.0E-6]
 
         gdf[['GID', 'grid_index', 'country', 'grid_fraction']].to_csv(
-            Path('./temp') / f'{gid}.csv',
-            float_format='%.3f',
+            TEMP_DIR / f'{gid}.csv',
+            float_format='%.6f',
             index=False,
         )
 
