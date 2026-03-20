@@ -5,6 +5,9 @@ from pathlib import Path
 VERSION = '4.0'
 
 DATA_DIR = Path('/storage/work/yzs123/analyses/Cycles-global-simulation-database/data')
+TEMP_DIR = Path('/storage/work/yzs123/analyses/Cycles-global-simulation-database/temp')
+LUT_DIR = Path('/storage/work/yzs123/analyses/Cycles-global-simulation-database/crop_lut')
+LUT_CSV = lambda crop, management, region: LUT_DIR / f'{crop}_{management}_{region}_lut_{VERSION}.csv'
 
 @dataclass
 class CropGridInfo:
@@ -34,3 +37,4 @@ GAEZ = CropGridInfo(
 
 WGS84 = 'epsg:4326'
 CEA = '+proj=cea +units=m'
+
