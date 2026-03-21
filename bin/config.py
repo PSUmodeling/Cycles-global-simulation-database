@@ -35,6 +35,20 @@ GAEZ = CropGridInfo(
     dimensions=(2160, 4320),
 )
 
+GAEZ_NAMES = {
+    'bean': 'Pulses',
+    'cassava': 'Cassava',
+    'lentil': 'Pulses',
+    'maize': 'Maize',
+    'millet': 'Millet',
+    'potato': 'PotatoAndSweetpotato',
+    'rice': 'Rice',
+    'sorghum': 'Sorghum',
+    'soybean': 'Soybean',
+    'sweetpotato': 'PotatoAndSweetpotato',
+    'wheat': 'Wheat',
+}
+
 WGS84 = 'epsg:4326'
 CEA = '+proj=cea +units=m'
 

@@ -12,20 +12,7 @@ from shapely.geometry import Point
 from config import CROPGRIDS, GAEZ
 from config import DATA_DIR, TEMP_DIR, LUT_CSV
 from config import WGS84, CEA
-
-GAEZ_NAMES = {
-    'bean': 'Pulses',
-    'cassava': 'Cassava',
-    'lentil': 'Pulses',
-    'maize': 'Maize',
-    'millet': 'Millet',
-    'potato': 'PotatoAndSweetpotato',
-    'rice': 'Rice',
-    'sorghum': 'Sorghum',
-    'soybean': 'Soybean',
-    'sweetpotato': 'PotatoAndSweetpotato',
-    'wheat': 'Wheat',
-}
+from config import GAEZ_NAMES
 
 GAEZ_VARIABLES = {
     'harvested_area': 'HarvArea',
@@ -40,7 +27,10 @@ class Crop:
     def __post_init__(self) -> None:
         nc = xarray.open_dataset(CROPGRIDS.file_path(self.name))
         nc.rio.write_crs(WGS84, inplace=True)
-        df = pd.DataFrame(nc['croparea'].to_series().rename('crop_area_ha'))
+        df = pd.DataFrame({
+            'crop_area_ha': nc['croparea'].to_series(),
+            'harvested_area_ha': nc['harvarea'].to_series(),
+        })
         df.replace(-1, np.nan, inplace=True)
 
         for management in ['Rainfed', 'Irrigated']:
@@ -54,6 +44,8 @@ class Crop:
 
         df['rainfed_crop_area_ha'] = df['crop_area_ha'] * df['rainfed_fraction']
         df['irrigated_crop_area_ha'] = df['crop_area_ha'] - df['rainfed_crop_area_ha']
+        df['rainfed_harvested_area_ha'] = df['harvested_area_ha'] * df['rainfed_fraction']
+        df['irrigated_harvested_area_ha'] = df['harvested_area_ha'] - df['rainfed_harvested_area_ha']
         df['grid_index'] = range(len(df))
         self.data = df.reset_index(names=['latitude', 'longitude'])
 
@@ -72,7 +64,7 @@ def get_cropgrids_gdf(crop_data: pd.DataFrame, gadm_gdf: gpd.GeoDataFrame, count
     if df.empty: return gpd.GeoDataFrame()
 
     # Calculate fraction weighted crop area and production for each grid cell
-    for col in ['rainfed_crop_area_ha', 'irrigated_crop_area_ha', 'rainfed_production', 'irrigated_production']:
+    for col in ['rainfed_crop_area_ha', 'irrigated_crop_area_ha', 'rainfed_harvested_area_ha', 'irrigated_harvested_area_ha', 'rainfed_production', 'irrigated_production']:
         df[col] = df[['grid_index', 'grid_fraction']].apply(lambda x: crop_data.iloc[int(x['grid_index'])][col] * x['grid_fraction'], axis=1)
 
     # Filter out grid cells with zero crop area to speed up distance calculations
@@ -131,14 +123,21 @@ def main(crop_name):
         _dfs = {}
 
         for management in ['rainfed', 'irrigated']:
-            _dfs[management] = grid_gdf.reset_index()[['GID', f'{management}_crop_area_ha', 'grid_fraction']].groupby('GID').agg(
+            _dfs[management] = grid_gdf.reset_index()[['GID', f'{management}_crop_area_ha', f'{management}_harvested_area_ha', 'grid_fraction']].groupby('GID').agg(
                 {
                     f'{management}_crop_area_ha': 'sum',
+                    f'{management}_harvested_area_ha': 'sum',
                     'grid_fraction': 'max',
                 }
             )
             _dfs[management] = gadm_gdf[['UID', 'NAME_0', 'NAME_1', 'NAME_2', 'region_area_km2']].join(_dfs[management], how='inner')
-            _dfs[management].rename(columns={f'{management}_crop_area_ha': 'crop_area_ha'}, inplace=True)
+            _dfs[management].rename(
+                columns={
+                    f'{management}_crop_area_ha': 'crop_area_ha',
+                    f'{management}_harvested_area_ha': 'harvested_area_ha',
+                },
+                inplace=True,
+            )
             _dfs[management]['crop_area_fraction'] = _dfs[management]['crop_area_ha'] * 1.0E-2 / _dfs[management][f'region_area_km2']
 
             _dfs[management] = _dfs[management][area_fraction_filter(_dfs[management])]
