@@ -1,8 +1,8 @@
 import geopandas as gpd
-from config import DATA_DIR
+from config import GADM
 
-GADM_GPKG = DATA_DIR / 'gadm' / 'gadm_410.gpkg'
-GADM_SHP = DATA_DIR / 'gadm' / 'gadm41_global_2.shp'
+GADM_GPKG = GADM.path / 'gadm_410.gpkg'
+GADM_SHP = GADM.path / 'gadm41_global_2.shp'
 
 def choose_gid(gid_0: str, gid_1: str, gid_2: str) -> str:
     return gid_2 or gid_1 or gid_0
