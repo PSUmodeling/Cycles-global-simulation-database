@@ -10,11 +10,30 @@ TEMP_DIR = PROJECT_DIR / 'temp'
 LUT_DIR = PROJECT_DIR / 'crop_lut'
 LUT_CSV = lambda crop, management, region: LUT_DIR / f'{crop}_{management}_{region}_lut_{VERSION}.csv'
 
+CROPS: frozenset(str) = frozenset({
+    'bean',
+    'cassava',
+    'lentil',
+    'maize',
+    'millet',
+    'potato',
+    'rice',
+    'sorghum',
+    'soybean',
+    'sweetpotato',
+    'wheat',
+})
+MANAGEMENTS: frozenset[str] = frozenset({'rainfed', 'irrigated'})
+
+SOIL_SOURCE = 'SoilGrids'
+WEATHER_SOURCE = 'GLDAS'
+
 @dataclass
-class GeoSpatialDataInfoMixin:
-    file_path: Callable | str
-    grid_file: Path | None
-    dimensions: tuple
+class CropGridsData:
+    path: Callable
+    grid_file: Path
+    dimensions: tuple=(3600, 7200)
+    ocean_value: int=-1
 
     @property
     def di(self) -> float:
@@ -24,49 +43,64 @@ class GeoSpatialDataInfoMixin:
     def dj(self) -> float:
         return 180.0 / self.dimensions[0]
 
-CROPGRIDS = GeoSpatialDataInfoMixin(
-    file_path=lambda crop: DATA_DIR / 'CROPGRIDS' / f'CROPGRIDSv1.08_{crop}.nc',
+@dataclass
+class GaezData:
+    path: Callable
+    dimensions: tuple=(2160, 4320)
+    variables: dict[str, str] = {
+        'harvested_area': 'HarvArea',
+        'production': 'Production',
+    }
+    crop_names: dict[str, str] = {
+        'bean': 'Pulses',
+        'cassava': 'Cassava',
+        'lentil': 'Pulses',
+        'maize': 'Maize',
+        'millet': 'Millet',
+        'potato': 'PotatoAndSweetpotato',
+        'rice': 'Rice',
+        'sorghum': 'Sorghum',
+        'soybean': 'Soybean',
+        'sweetpotato': 'PotatoAndSweetpotato',
+        'wheat': 'Wheat',
+    }
+
+@dataclass
+class GenericRasterData:
+    path: Path
+    dimensions: tuple
+
+@dataclass
+class GenericData:
+    path: Path
+
+CROPGRIDS = CropGridsData(
+    path=lambda crop: DATA_DIR / 'CROPGRIDS' / f'CROPGRIDSv1.08_{crop}.nc',
     grid_file=DATA_DIR / 'CROPGRIDS' / f'Countries_2018.nc',
-    dimensions=(3600, 7200),
 )
 
-GAEZ = GeoSpatialDataInfoMixin(
-    file_path=lambda crop, management, var: DATA_DIR / f'GAEZ+_2015/GAEZAct2015_{var}_{crop}_{management}.tif',
-    grid_file=None,
-    dimensions=(2160, 4320),
+GAEZ = GaezData(
+    path=lambda crop, management, var: DATA_DIR / f'GAEZ+_2015/GAEZAct2015_{var}_{crop}_{management}.tif',
 )
 
-ESACCI_LC = GeoSpatialDataInfoMixin(
-    file_path=DATA_DIR / 'ESACCI-LC' / 'ESACCI-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.tif',
-    grid_file=None,
+ESACCI_LC = GenericRasterData(
+    path=DATA_DIR / 'ESACCI-LC' / 'ESACCI-LC-L4-LCCS-Map-300m-P1Y-2020-v2.1.1.tif',
     dimensions=(64800, 129600),
 )
 
-HYSOG = GeoSpatialDataInfoMixin(
-    file_path=DATA_DIR / 'HYSOGs250m' / 'HYSOGs250m.tif',
-    grid_file=None,
+HYSOG = GenericRasterData(
+    path=DATA_DIR / 'HYSOGs250m' / 'HYSOGs250m.tif',
     dimensions=(67200, 172800),
 )
 
-GMTED = GeoSpatialDataInfoMixin(
-    file_path=DATA_DIR / 'GMTED2010' / 'slope_1KMmd_GMTEDmd.tif',
-    grid_file=None,
+GMTED = GenericRasterData(
+    path=DATA_DIR / 'GMTED2010' / 'slope_1KMmd_GMTEDmd.tif',
     dimensions=(16800, 43200),
 )
 
-GAEZ_NAMES = {
-    'bean': 'Pulses',
-    'cassava': 'Cassava',
-    'lentil': 'Pulses',
-    'maize': 'Maize',
-    'millet': 'Millet',
-    'potato': 'PotatoAndSweetpotato',
-    'rice': 'Rice',
-    'sorghum': 'Sorghum',
-    'soybean': 'Soybean',
-    'sweetpotato': 'PotatoAndSweetpotato',
-    'wheat': 'Wheat',
-}
+GADM = GenericData(
+    path=DATA_DIR / 'GADM',
+)
 
 WGS84 = 'epsg:4326'
 CEA = '+proj=cea +units=m'
