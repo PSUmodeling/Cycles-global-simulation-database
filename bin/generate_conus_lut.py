@@ -5,7 +5,7 @@ from config import LUT_CSV
 
 CONUS_WEATHER_SOURCES = ['NLDAS', 'gridMET']
 
-def main(params):
+def main():
     for crop in CROPS:
         for management in MANAGEMENTS:
             if not LUT_CSV(crop, management, 'global').exists():
@@ -33,7 +33,7 @@ def main(params):
                 'soil',
                 'reference_latitude',
                 'reference_longitude',
-            ]].to_csv(LUT_CSV(crop, management, 'conus'), float_format='%.3f')
+            ]].to_csv(LUT_CSV(crop, management, 'conus'), index=False, float_format='%.3f')
 
 
 if __name__ == '__main__':
