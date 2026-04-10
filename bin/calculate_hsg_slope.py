@@ -1,137 +1,116 @@
-#!/usr/bin/env python3
-
-import geopandas as gpd
+from __future__ import annotations
 import numpy as np
+import pandas as pd
 import rioxarray
+from cycles.gadm import read_gadm
+from dataclasses import dataclass
 from rasterio.enums import Resampling
-from setting import GADM_SHP
-from setting import GEOTIFFS
-from setting import HSG_SLOPE_CSV
-from setting import RAINFED_CROPLAND
-from setting import IRRIGATED_CROPLAND
-from setting import MOSAIC_CROPLAND
+from shapely.geometry import Polygon
+from typing import Callable
+from config import ESACCI_LC, GADM, HYSOG, GMTED
+from config import RAINFED_CROPLAND, IRRIGATED_CROPLAND, MOSAIC_CROPLAND
+from config import HSG_SLOPE_CSV
 
+HSG_DICT: dict[int, str] = {
+    1:  'A',
+    2:  'B',
+    3:  'C',
+    4:  'D',
+    11: 'A/D',
+    12: 'B/D',
+    13: 'C/D',
+    14: 'B/D',
+}
+LAND_USES: dict[str, set] = {
+    'rainfed':  RAINFED_CROPLAND,
+    'irrigated': IRRIGATED_CROPLAND,
+    'mosaic':   MOSAIC_CROPLAND,
+}
+VARIABLES: tuple[str, str] = ('HSG', 'slope')
+OUTPUT_COLS = ['GID', *[f'{lu}_{v}' for lu in LAND_USES for v in VARIABLES]]
 
-def calculate_hsg_slope(xds_lc, xds_hsg, xds_slope, gid, geometry):
-    """Get hydrologic soil group and slope for a region
+@dataclass
+class GeoSpatialData:
+    xds: rioxarray.DataArray
+    func: Callable[[np.ndarray], object] | None
+    data_type: type
+
+def parse_values(variable: str, gs_data: GeoSpatialData, reference_xds: rioxarray.DataArray, geometry: Polygon) -> dict[str: float]:
+    """ Clip gs_data to geometry, reproject to match the land-cover reference, and reduce with gs_data.func.
+    Returns np.nan if no data falls within the geometry or land-use mask.
     """
-
-    print(gid)
-
-    # If land cover data are missing for the region, return bad values
     try:
-        clipped_lc = xds_lc.rio.clip([geometry], from_disk=True)
-        df_lc = clipped_lc[0].to_pandas()
-    except:
-        return -999, -999, -999, -999
+        clipped = gs_data.xds.rio.clip([geometry], from_disk=True)
+    except Exception:
+        return {f'{lu}_{variable}': np.nan for lu in LAND_USES}
 
-    xds = {
-        "HSG": xds_hsg,
-        "slope": xds_slope,
+    reprojected = clipped.rio.reproject_match(reference_xds, resampling=Resampling.nearest)
+
+    results = {}
+    for lu, land_use_classes in LAND_USES.items():
+        lu_mask = reference_xds[0].to_pandas().isin(land_use_classes)
+        values = reprojected[0].to_pandas()[lu_mask].to_numpy()
+        values = values[~np.isnan(values)].astype(gs_data.data_type)
+        results[f'{lu}_{variable}'] = gs_data.func(values) if values.size > 0 else np.nan
+
+    return results
+
+
+def calculate_hsg_slope(gs_datasets: dict[str, GeoSpatialData], geometry: Polygon) -> dict[str, object]:
+    """ Compute hydrologic soil group and slope for each land-use type within the given geometry.
+    Returns a flat dict of the form:
+        {<land_use>_<variable>: value, ...}
+    """
+    hsg_slope = {}
+    clipped_lc = gs_datasets['land_cover'].xds.rio.clip([geometry], from_disk=True)
+    for variable in VARIABLES:
+        hsg_slope.update(parse_values(variable, gs_datasets[variable], reference_xds=clipped_lc, geometry=geometry))
+
+    return hsg_slope
+
+
+def load_gs_datasets() -> dict[str, GeoSpatialData]:
+    return {
+        'land_cover': GeoSpatialData(
+            xds=rioxarray.open_rasterio(ESACCI_LC.path, masked=True),
+            func=None,
+            data_type=int,
+        ),
+        'HSG': GeoSpatialData(
+            xds=rioxarray.open_rasterio(HYSOG.path, masked=True),
+            func=lambda x: HSG_DICT[np.bincount(x).argmax()],
+            data_type=int,
+        ),
+        'slope': GeoSpatialData(
+            xds=rioxarray.open_rasterio(GMTED.path, masked=True),
+            func=np.median,
+            data_type=float,
+        ),
     }
-
-    funcs = {
-        "HSG": lambda x: np.bincount(x).argmax(),
-        "slope": lambda x: np.median(x),
-    }
-
-    types = {
-        "HSG": int,
-        "slope": float,
-    }
-
-    vars = ["HSG", "slope"]
-
-    rainfed = {}
-    irrigated = {}
-
-    for v in vars:
-        # Clip geotiff using region boundary
-        try:
-            clipped = xds[v].rio.clip([geometry], from_disk=True)
-        except:
-            rainfed[v] = irrigated[v] = -999
-            continue
-
-        # Convert to dataframe
-        df = clipped.rio.reproject_match(clipped_lc, resampling=Resampling.nearest)[0].to_pandas()
-
-        # Rainfed
-        x = df[df_lc.isin(RAINFED_CROPLAND)].to_numpy()
-        x = x[~np.isnan(x)].astype(types[v])
-
-        if x.size == 0:
-            rainfed[v] = -999
-        else:
-            rainfed[v] = funcs[v](x)
-
-        # Irrigated
-        x = df[df_lc.isin(IRRIGATED_CROPLAND)].to_numpy()
-        x = x[~np.isnan(x)].astype(types[v])
-
-        if x.size == 0:
-            irrigated[v] = -999
-        else:
-            irrigated[v] = funcs[v](x)
-
-        # Mosaic
-        if (rainfed[v] == -999) and (irrigated[v] == -999):
-            x = df[df_lc.isin(MOSAIC_CROPLAND)].to_numpy()
-            x = x[~np.isnan(x)].astype(types[v])
-
-            if x.size == 0:
-                y = df.to_numpy()
-                y = y[~np.isnan(y)].astype(types[v])
-                if y.size == 0:
-                    rainfed[v] = irrigated[v] = -999
-                else:
-                    rainfed[v] = irrigated[v] = funcs[v](y)
-            else:
-                rainfed[v] = irrigated[v] = funcs[v](x)
-        elif rainfed[v] == -999:
-            rainfed[v] = irrigated[v]
-        elif irrigated[v] == -999:
-            irrigated[v] = rainfed[v]
-
-    return rainfed["HSG"], irrigated["HSG"], rainfed["slope"], irrigated["slope"]
 
 
 def main():
+    gs_datasets = load_gs_datasets()
+    gadm = read_gadm(GADM.path, 'global', 'county').reset_index()
 
-    xds_lc = rioxarray.open_rasterio(GEOTIFFS["lc"], masked=True)
-    xds_hsg = rioxarray.open_rasterio(GEOTIFFS["HSG"], masked=True)
-    xds_slope = rioxarray.open_rasterio(GEOTIFFS["slope"], masked=True)
+    HSG_SLOPE_CSV.parent.mkdir(parents=True, exist_ok=True)
 
-    # Read administrative region boundaries
-    print("Read gadm file")
-    df = gpd.read_file(GADM_SHP)
+    first_write = True
+    for country, group in gadm.groupby('GID_0'):
+        rows = []
+        for _, row in group.iterrows():
+            result = calculate_hsg_slope(gs_datasets, row['geometry'])
+            rows.append({'GID': row['GID'], **result})
 
-    df[[
-        "RainfedHSG",
-        "IrrigatedHSG",
-        "RainfedSlope",
-        "IrrigatedSlope",
-    ]] = df.apply(
-        lambda x: calculate_hsg_slope(xds_lc, xds_hsg, xds_slope, x["GID"], x["geometry"]),
-        axis=1,
-        result_type="expand",
-    )
+        country_df = pd.DataFrame(rows)[OUTPUT_COLS]
+        country_df.to_csv(
+            HSG_SLOPE_CSV,
+            mode='w' if first_write else 'a',
+            header=first_write,
+            index=False,
+            float_format='%.2f',
+        )
+        first_write = False
 
-    print("Write to output")
-    df_out = df[[
-        "GID",
-        "RainfedHSG",
-        "IrrigatedHSG",
-        "RainfedSlope",
-        "IrrigatedSlope",
-    ]]
-    df_out = df_out.astype({"RainfedHSG": int, "IrrigatedHSG": int})
-    df_out.to_csv(
-        HSG_SLOPE_CSV,
-        float_format="%.2f",
-        index=False,
-    )
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
